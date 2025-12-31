@@ -3,18 +3,59 @@ server:
 spring:
   application:
     name: xx-rag
-  profiles:
-    active: app, inference, vector, ingestion
   datasource:
     url: jdbc:mysql://localhost:3306/rag?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
     username: root
-    password: 123456
+    password:
     driver-class-name: com.mysql.cj.jdbc.Driver
+  elasticsearch:
+    uris: localhost:9200
+    username: elastic
+    password:
   servlet:
     multipart:
       enabled: true
       max-file-size: 100MB
       max-request-size: 100MB
+
+deepseek:
+  api-key:
+  base-url: https://api.deepseek.com/v1
+  model: deepseek-chat
+  temperature: 0.7
+  max-tokens: 2048
+  timeout-seconds: 120
+
+rag:
+  prompt:
+    system-prompt: |
+      你是潇潇知识问答助手，需遵守：
+      1. 仅用简体中文作答。
+      2. 回答需先给结论，再给论据。
+      3. 若无足够信息，请回答"暂无相关信息"并说明原因。
+      4. 回复自然、流畅，不要提及"文档"或"检索"等技术术语。
+
+embedding:
+  api:
+    model: text-embedding-v4
+    dimension: 1024
+    api-key: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+app:
+  rag:
+    retrieval:
+      hybrid-enabled: true        # 是否启用混合检索
+      recall-top-k: 5             # 检索时返回的 Top-K 结果数量
+      candidate-multiplier: 10    # kNN 候选集倍数
+      rrf:
+        k: 60                     # 平滑常数
+        text-weight: 1.0          # 文本检索（BM25）结果的权重
+        vector-weight: 1.0        # 向量检索（kNN）结果的权重
+        final-top-k: 10           #  最终返回的 Top-K 结果数量
+  text-chunker:
+    chunk-size: 512               # 文本分块大小
+    overlap: 100                  # 文本分块重叠大小
+
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml
@@ -25,8 +66,8 @@ mybatis:
 logging:
   level:
     yuuine.xxapp: debug
-    yuuine.raginference: DEBUG
-    org.springframework.web.reactive: DEBUG
+    yuuine.raginference: debug
+    org.springframework.web.reactive: debug
   file:
     name: ./logs/application.log
   logback:
@@ -35,10 +76,3 @@ logging:
       max-history: 7
       total-size-cap: 1GB
       file-name-pattern: ./logs/application.%d{yyyy-MM-dd}.%i.log
-deepseek:
-  api-key:
-  base-url: https://api.deepseek.com/v1
-  model: deepseek-chat
-  temperature: 0.7
-  max-tokens: 2048
-  timeout-seconds: 120

@@ -1,7 +1,0 @@
-spring:
-  config:
-    activate:
-      on-profile: local
-
-deepseek:
-  api-key: "sk-921b3f7385334db6a16a2a117614d56b"
