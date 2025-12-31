@@ -316,7 +316,7 @@
         if (toDeleteMd5s.length === 0) return;
 
         try {
-            const res = await fetch('/app/delete', {
+            const res = await fetch('/xx/delete', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(toDeleteMd5s)
@@ -358,7 +358,7 @@
 
     async function loadDocs() {
         try {
-            const res = await fetch('/app/getDoc');
+            const res = await fetch('/xx/getDoc');
             const data = await res.json();
 
             const tbody = document.querySelector('#docTable tbody');

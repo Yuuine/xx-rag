@@ -573,7 +573,7 @@
             for (let file of fileInput.files) formData.append('files', file);
             uploadBtn.disabled = true;
             uploadBtn.textContent = '上传中...';
-            fetch('/app/upload', {method: 'POST', body: formData})
+            fetch('/xx/upload', {method: 'POST', body: formData})
                 .then(res => res.json())
                 .then(data => {
                     if (data.code === 0) {
@@ -657,7 +657,7 @@
             sendBtn.disabled = true;
             sendBtn.innerHTML = '<span class="loading"></span>思考中';
             const startTime = new Date();
-            fetch('/app/search', {
+            fetch('/xx/search', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({query: question, topK: 5})
