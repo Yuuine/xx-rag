@@ -2,9 +2,8 @@ package yuuine.xxrag.app.api;
 
 import org.springframework.modulith.NamedInterface;
 import org.springframework.web.multipart.MultipartFile;
-import yuuine.xxrag.Result;
-import yuuine.xxrag.InferenceRequest;
-import yuuine.xxrag.VectorSearchRequest;
+import yuuine.xxrag.dto.common.Result;
+import yuuine.xxrag.dto.request.VectorSearchRequest;
 
 import java.util.List;
 

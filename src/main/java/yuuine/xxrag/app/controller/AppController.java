@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.app.api.AppService;
-import yuuine.xxrag.Result;
-import yuuine.xxrag.VectorSearchRequest;
+import yuuine.xxrag.dto.common.Result;
+import yuuine.xxrag.dto.request.VectorSearchRequest;
 
 import java.util.List;
 

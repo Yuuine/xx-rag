@@ -3,15 +3,15 @@ package yuuine.xxrag.app.ragInferenceService.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import yuuine.xxrag.VectorSearchRequest;
+import yuuine.xxrag.dto.request.VectorSearchRequest;
 import yuuine.xxrag.app.client.InferenceClient;
 import yuuine.xxrag.app.config.RagPromptProperties;
-import yuuine.xxrag.InferenceRequest;
+import yuuine.xxrag.dto.request.InferenceRequest;
 import yuuine.xxrag.app.api.dto.response.InferenceResponse;
 import yuuine.xxrag.app.api.dto.response.RagInferenceResponse;
 import yuuine.xxrag.app.exception.BusinessException;
 import yuuine.xxrag.app.ragInferenceService.RagInferenceService;
-import yuuine.xxrag.VectorSearchResult;
+import yuuine.xxrag.dto.common.VectorSearchResult;
 
 import java.util.List;
 import java.util.stream.Collectors;

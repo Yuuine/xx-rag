@@ -4,11 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.stereotype.Service;
-import yuuine.xxrag.vector.config.RetrievalProperties;
 import yuuine.xxrag.vector.domain.embedding.service.EmbeddingService;
 import yuuine.xxrag.vector.domain.es.model.RagChunkDocument;
-import yuuine.xxrag.VectorSearchRequest;
-import yuuine.xxrag.VectorSearchResult;
+import yuuine.xxrag.dto.request.VectorSearchRequest;
+import yuuine.xxrag.dto.common.VectorSearchResult;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,7 +21,6 @@ public class VectorSearchService {
 
     private final EmbeddingService embeddingService;
     private final RagRetrievalService ragRetrievalService;
-    private final RetrievalProperties retrievalProperties;
 
     public List<VectorSearchResult> search(VectorSearchRequest vectorSearchRequest) throws IOException {
 

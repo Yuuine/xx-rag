@@ -1,10 +1,10 @@
 package yuuine.xxrag.vector.api;
 
 import org.springframework.modulith.NamedInterface;
-import yuuine.xxrag.VectorAddRequest;
-import yuuine.xxrag.VectorSearchRequest;
-import yuuine.xxrag.VectorAddResult;
-import yuuine.xxrag.VectorSearchResult;
+import yuuine.xxrag.dto.request.VectorAddRequest;
+import yuuine.xxrag.dto.request.VectorSearchRequest;
+import yuuine.xxrag.dto.common.VectorAddResult;
+import yuuine.xxrag.dto.common.VectorSearchResult;
 
 import java.io.IOException;
 import java.util.List;

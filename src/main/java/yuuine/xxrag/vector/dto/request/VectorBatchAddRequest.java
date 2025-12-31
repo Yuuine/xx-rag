@@ -1,6 +1,6 @@
 package yuuine.xxrag.vector.dto.request;
 
-import yuuine.xxrag.VectorAddRequest;
+import yuuine.xxrag.dto.request.VectorAddRequest;
 
 import java.util.List;
 

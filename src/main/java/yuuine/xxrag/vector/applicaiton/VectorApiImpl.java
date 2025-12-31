@@ -11,10 +11,10 @@ import yuuine.xxrag.vector.domain.es.model.RagChunkDocument;
 import yuuine.xxrag.vector.domain.es.service.VectorAddService;
 import yuuine.xxrag.vector.domain.es.service.VectorDeleteService;
 import yuuine.xxrag.vector.domain.es.service.VectorSearchService;
-import yuuine.xxrag.VectorAddRequest;
-import yuuine.xxrag.VectorSearchRequest;
-import yuuine.xxrag.VectorAddResult;
-import yuuine.xxrag.VectorSearchResult;
+import yuuine.xxrag.dto.request.VectorAddRequest;
+import yuuine.xxrag.dto.request.VectorSearchRequest;
+import yuuine.xxrag.dto.common.VectorAddResult;
+import yuuine.xxrag.dto.common.VectorSearchResult;
 
 import java.io.IOException;
 import java.util.List;

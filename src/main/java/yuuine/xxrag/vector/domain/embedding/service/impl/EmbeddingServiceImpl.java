@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service;
 import yuuine.xxrag.vector.domain.embedding.model.ResponseResult;
 import yuuine.xxrag.vector.domain.embedding.service.EmbeddingService;
 import yuuine.xxrag.vector.domain.es.model.RagChunkDocument;
-import yuuine.xxrag.VectorAddRequest;
-import yuuine.xxrag.VectorAddResult;
-import yuuine.xxrag.VectorAddResult.VectorChunk;
+import yuuine.xxrag.dto.request.VectorAddRequest;
+import yuuine.xxrag.dto.common.VectorAddResult;
+import yuuine.xxrag.dto.common.VectorAddResult.VectorChunk;
 import yuuine.xxrag.vector.util.DashScopeEmbeddingUtil;
 
 import java.time.Instant;

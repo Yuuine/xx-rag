@@ -2,7 +2,7 @@ package yuuine.xxrag.vector.domain.embedding.model;
 
 import lombok.Data;
 import yuuine.xxrag.vector.domain.es.model.RagChunkDocument;
-import yuuine.xxrag.VectorAddResult;
+import yuuine.xxrag.dto.common.VectorAddResult;
 
 import java.util.List;
 

@@ -7,7 +7,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import yuuine.xxrag.Result;
+import yuuine.xxrag.dto.common.Result;
 
 import java.util.HashMap;
 import java.util.Map;

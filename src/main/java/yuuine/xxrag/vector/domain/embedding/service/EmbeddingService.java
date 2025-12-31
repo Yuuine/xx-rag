@@ -1,7 +1,7 @@
 package yuuine.xxrag.vector.domain.embedding.service;
 
 import yuuine.xxrag.vector.domain.embedding.model.ResponseResult;
-import yuuine.xxrag.VectorAddRequest;
+import yuuine.xxrag.dto.request.VectorAddRequest;
 
 import java.util.List;
 

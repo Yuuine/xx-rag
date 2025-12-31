@@ -4,12 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import yuuine.xxrag.app.client.VectorClient;
-import yuuine.xxrag.VectorAddRequest;
-import yuuine.xxrag.VectorAddResult;
-import yuuine.xxrag.VectorSearchRequest;
+import yuuine.xxrag.dto.request.VectorAddRequest;
+import yuuine.xxrag.dto.common.VectorAddResult;
+import yuuine.xxrag.dto.request.VectorSearchRequest;
 import yuuine.xxrag.app.exception.BusinessException;
 import yuuine.xxrag.app.ragVectorService.RagVectorService;
-import yuuine.xxrag.VectorSearchResult;
+import yuuine.xxrag.dto.common.VectorSearchResult;
 import yuuine.xxrag.vector.api.VectorApi;
 
 import java.util.List;
