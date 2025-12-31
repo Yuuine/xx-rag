@@ -1,0 +1,11 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  elasticsearch:
+    password: kbi*iHy*ubxyE-59FfER
+
+embedding:
+  api:
+    api-key: "sk-76675e868d094fee9d8ed2c6b5e7efcc"

@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>潇潇知识助手</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .chat-card {
+            width: 100%;
+            max-width: 1000px;
+            height: 95vh;
+            min-height: 700px;
+            max-height: 1000px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: #0084ff;
+            color: white;
+            padding: 16px 24px;
+            font-size: 1.3em;
+            font-weight: 500;
+            position: relative;
+            text-align: center;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-controls {
+            position: absolute;
+            right: 24px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .upload-trigger {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upload-trigger:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .time-toggle-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 76px;
+            height: 34px;
+        }
+
+        .time-toggle-checkbox {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .time-toggle-label {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.3);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .time-toggle-label:before {
+            position: absolute;
+            content: "";
+            height: 28px;
+            width: 28px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .time-toggle-checkbox:checked + .time-toggle-label {
+            background-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .time-toggle-checkbox:checked + .time-toggle-label:before {
+            transform: translateX(42px);
+        }
+
+        .time-toggle-text {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.85em;
+            font-weight: 500;
+            color: white;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .time-toggle-text.on {
+            left: 10px;
+            opacity: 0; /* 默认隐藏 ON */
+        }
+
+        .time-toggle-text.off {
+            right: 10px;
+            opacity: 1; /* 默认显示 OFF */
+        }
+
+        .time-toggle-checkbox:checked ~ .time-toggle-text.on {
+            opacity: 1;
+        }
+
+        .time-toggle-checkbox:checked ~ .time-toggle-text.off {
+            opacity: 0;
+        }
+
+        .time-toggle-checkbox:not(:checked) ~ .time-toggle-text.on {
+            opacity: 0;
+        }
+
+        .time-toggle-checkbox:not(:checked) ~ .time-toggle-text.off {
+            opacity: 1;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #messagesContainer {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 10px 16px;
+            border-radius: 18px;
+            line-height: 1.7;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: #0084ff;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.ai {
+            align-self: flex-start;
+            background: white;
+            color: #333;
+            border: 1px solid #e5e5ea;
+            border-bottom-left-radius: 4px;
+        }
+
+        /* 用户消息时间戳文字颜色改为白色，确保可见 */
+        .message.user .timestamp {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .message .timestamp {
+            font-size: 0.8em;
+            color: #999;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .message.user .timestamp {
+            text-align: right;
+        }
+
+        .message.ai .timestamp {
+            text-align: left;
+        }
+
+        .message .footnote {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 8px;
+            border-top: 1px solid #eee;
+            padding-top: 8px;
+        }
+
+        /* 新增：尾注列表样式 */
+        .message .references {
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px solid #eee;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .message .references ol {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .message .references li {
+            margin: 4px 0;
+        }
+
+        .message.ai h1, .message.ai h2, .message.ai h3 {
+            margin: 1em 0 0.6em;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .message.ai h1 {
+            font-size: 1.4em;
+        }
+
+        .message.ai h2 {
+            font-size: 1.3em;
+        }
+
+        .message.ai h3 {
+            font-size: 1.2em;
+        }
+
+        .message.ai p {
+            margin: 0.8em 0;
+        }
+
+        .message.ai ul, .message.ai ol {
+            padding-left: 1.6em;
+            margin: 0.8em 0;
+        }
+
+        .message.ai li {
+            margin: 0.4em 0;
+        }
+
+        .message.ai strong {
+            font-weight: 600;
+        }
+
+        .message.ai em {
+            font-style: italic;
+        }
+
+        .message.ai code {
+            background: #f1f1f1;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'SF Mono', Monaco, Consolas, 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .message.ai pre {
+            background: #f6f8fa;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 0.8em 0;
+            border: 1px solid #e0e0e0;
+        }
+
+        .message.ai pre code {
+            background: none;
+            padding: 0;
+            font-size: 0.95em;
+        }
+
+        .message.ai blockquote {
+            border-left: 4px solid #ddd;
+            padding-left: 16px;
+            margin: 0.8em 0;
+            color: #666;
+            font-style: italic;
+        }
+
+        .message.ai hr {
+            border: none;
+            border-top: 1px solid #eee;
+            margin: 1.2em 0;
+        }
+
+        .message.ai table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 0.8em 0;
+        }
+
+        .message.ai table th, .message.ai table td {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        .message.ai table th {
+            background-color: #f8f9fa;
+        }
+
+        .message.ai img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 0.8em 0;
+        }
+
+        .input-section {
+            padding: 16px 24px;
+            background: #f8f9fa;
+            border-top: 1px solid #eee;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        #questionInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 24px;
+            font-size: 1.05em;
+            line-height: 1.5;
+            resize: none;
+            min-height: 48px;
+            max-height: 120px;
+            box-sizing: border-box;
+            font-family: inherit;
+            background: white;
+            overflow-y: auto;
+        }
+
+        #questionInput:focus {
+            outline: none;
+            border-color: #0084ff;
+            box-shadow: 0 0 0 3px rgba(0, 132, 255, 0.15);
+        }
+
+        #questionInput::placeholder {
+            color: #aaa;
+        }
+
+        .btn-send {
+            background: #0084ff;
+            color: white;
+            border: none;
+            padding: 0 28px;
+            height: 48px;
+            border-radius: 24px;
+            cursor: pointer;
+            font-size: 1em;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .btn-send:disabled {
+            background: #bbb;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .toast {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            min-width: 200px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            font-size: 1em;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 2000;
+        }
+
+        .toast.success {
+            background: #28a745;
+        }
+
+        .toast.error {
+            background: #dc3545;
+        }
+
+        .toast.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .upload-modal {
+            display: none;
+            position: absolute;
+            top: 70px;
+            right: 24px;
+            width: 320px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+            padding: 20px;
+            z-index: 1000;
+        }
+
+        .upload-modal.active {
+            display: block;
+        }
+
+        .upload-modal h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.1em;
+            text-align: center;
+        }
+
+        .upload-area {
+            border: 2px dashed #ced4da;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .upload-area p {
+            margin: 0 0 15px;
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .btn-upload {
+            width: 100%;
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+<div class="chat-card">
+    <header>
+        潇潇知识助手
+        <div class="header-controls">
+            <div class="time-toggle-wrapper">
+                <input type="checkbox" id="timeToggle" class="time-toggle-checkbox">
+                <label for="timeToggle" class="time-toggle-label"></label>
+                <span class="time-toggle-text on">ON</span>
+                <span class="time-toggle-text off">OFF</span>
+            </div>
+            <button class="upload-trigger" id="viewDocsTrigger" title="查看文档" aria-label="查看文档"
+                    style="margin-right: 8px;">📄
+            </button>
+            <button class="upload-trigger" id="uploadTrigger" title="上传文档" aria-label="上传文档">↑</button>
+        </div>
+    </header>
+    <div class="chat-container">
+        <div id="messagesContainer"></div>
+        <div class="input-section">
+            <textarea id="questionInput" placeholder="输入问题，按 Enter 发送（Shift+Enter 换行）..."></textarea>
+            <button id="sendBtn" class="btn-send">发送</button>
+        </div>
+    </div>
+    <div class="upload-modal" id="uploadModal">
+        <h3>上传文档</h3>
+        <div class="upload-area">
+            <p>支持 PDF、Word、TXT、Markdown 等格式</p>
+            <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.txt,.md">
+        </div>
+        <button id="uploadBtn" class="btn-upload">上传文件</button>
+    </div>
+</div>
+<div id="toast" class="toast"></div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const messagesContainer = document.getElementById('messagesContainer');
+        const questionInput = document.getElementById('questionInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadTrigger = document.getElementById('uploadTrigger');
+        const timeToggle = document.getElementById('timeToggle');
+        const uploadModal = document.getElementById('uploadModal');
+        const toast = document.getElementById('toast');
+        let showTimestamps = false;
+
+        function showToast(message, type = 'error') {
+            toast.textContent = message;
+            toast.className = 'toast ' + type;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        uploadTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            uploadModal.classList.toggle('active');
+        });
+
+        timeToggle.addEventListener('change', () => {
+            showTimestamps = timeToggle.checked;
+            const timestamps = document.querySelectorAll('.timestamp');
+            timestamps.forEach(ts => {
+                ts.style.display = showTimestamps ? 'block' : 'none';
+            });
+            showToast(showTimestamps ? '时间显示已开启' : '时间显示已关闭', 'success');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!uploadModal.contains(e.target) && !uploadTrigger.contains(e.target)) {
+                uploadModal.classList.remove('active');
+            }
+        });
+
+        uploadBtn.addEventListener('click', function () {
+            if (fileInput.files.length === 0) {
+                showToast('请选择文件', 'error');
+                return;
+            }
+            const formData = new FormData();
+            for (let file of fileInput.files) formData.append('files', file);
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '上传中...';
+            fetch('/app/upload', {method: 'POST', body: formData})
+                .then(res => res.json())
+                .then(data => {
+                    if (data.code === 0) {
+                        showToast('上传成功！文档已加载', 'success');
+                        fileInput.value = '';
+                    } else {
+                        showToast('上传失败，请稍后重试', 'error');
+                    }
+                })
+                .catch(() => showToast('上传失败，请检查网络或稍后重试', 'error'))
+                .finally(() => {
+                    uploadBtn.disabled = false;
+                    uploadBtn.textContent = '上传文件';
+                });
+        });
+
+        function addUserMessage(text) {
+            const div = document.createElement('div');
+            div.className = 'message user';
+            div.textContent = text;
+            const timestamp = document.createElement('div');
+            timestamp.className = 'timestamp';
+            timestamp.textContent = new Date().toLocaleString();
+            timestamp.style.display = showTimestamps ? 'block' : 'none';
+            div.appendChild(timestamp);
+            messagesContainer.appendChild(div);
+            scrollToBottom();
+        }
+
+        function renderAiMessage(text, duration, references = []) {
+            const div = document.createElement('div');
+            div.className = 'message ai';
+            const html = marked.parse(text);
+            div.innerHTML = html;
+
+            const timestamp = document.createElement('div');
+            timestamp.className = 'timestamp';
+            timestamp.textContent = new Date().toLocaleString();
+            timestamp.style.display = showTimestamps ? 'block' : 'none';
+            div.appendChild(timestamp);
+
+            const footnote = document.createElement('div');
+            footnote.className = 'footnote';
+            footnote.textContent = `推理耗时: ${duration} 秒`;
+            div.appendChild(footnote);
+
+            // 添加尾注形式的参考来源（去重、仅显示文件名）
+            if (references.length > 0) {
+                const uniqueSources = [...new Set(references.map(ref => ref.source))];
+                if (uniqueSources.length > 0) {
+                    const refsDiv = document.createElement('div');
+                    refsDiv.className = 'references';
+                    refsDiv.innerHTML = '<strong>参考来源：</strong>';
+                    const ol = document.createElement('ol');
+                    uniqueSources.forEach(source => {
+                        const li = document.createElement('li');
+                        li.textContent = source;
+                        ol.appendChild(li);
+                    });
+                    refsDiv.appendChild(ol);
+                    div.appendChild(refsDiv);
+                }
+            }
+
+            messagesContainer.appendChild(div);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function sendQuestion() {
+            const question = questionInput.value.trim();
+            if (!question) {
+                showToast('请输入问题', 'error');
+                return;
+            }
+            addUserMessage(question);
+            questionInput.value = '';
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span class="loading"></span>思考中';
+            const startTime = new Date();
+            fetch('/app/search', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({query: question, topK: 5})
+            })
+                .then(res => res.json())
+                .then(data => {
+                    const endTime = new Date();
+                    const duration = ((endTime - startTime) / 1000).toFixed(2);
+                    if (data.code === 0) {
+                        const result = data.data;
+                        const answer = result.answer || result || '[无回答]';
+                        renderAiMessage(answer, duration, result.references || []);
+                    } else {
+                        renderAiMessage('抱歉，当前无法回答，请稍后重试', duration);
+                    }
+                })
+                .catch(() => {
+                    const endTime = new Date();
+                    const duration = ((endTime - startTime) / 1000).toFixed(2);
+                    renderAiMessage('请求失败，请检查网络或稍后重试', duration);
+                })
+                .finally(() => {
+                    sendBtn.disabled = false;
+                    sendBtn.textContent = '发送';
+                    questionInput.focus();
+                });
+        }
+
+        sendBtn.addEventListener('click', sendQuestion);
+        questionInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendQuestion();
+            }
+        });
+    });
+    document.getElementById('viewDocsTrigger').addEventListener('click', () => {
+        window.open('/docs.html', '_blank');
+    });
+</script>
+</body>
+</html>

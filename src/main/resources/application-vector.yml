@@ -1,0 +1,46 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: vector
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
+  elasticsearch:
+    uris: localhost:9200
+    username: elastic
+    password: xxxxxxxxxxxxxxxx
+
+embedding:
+  api:
+    model: text-embedding-v4
+    dimension: 1024
+    api-key: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+app:
+  rag:
+    retrieval:
+      hybrid-enabled: true        # 是否启用混合检索
+      recall-top-k: 5             # 检索时返回的 Top-K 结果数量
+      candidate-multiplier: 10    # kNN 候选集倍数
+      rrf:
+        k: 60                     # 平滑常数
+        text-weight: 1.0          # 文本检索（BM25）结果的权重
+        vector-weight: 1.0        # 向量检索（kNN）结果的权重
+        final-top-k: 10           #  最终返回的 Top-K 结果数量
+
+logging:
+  level:
+    root: INFO
+
+  file:
+    name: ./logs/application.log
+
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      total-size-cap: 1GB

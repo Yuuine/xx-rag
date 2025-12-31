@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>已上传文档列表</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            overflow: hidden;
+        }
+
+        header {
+            background: #0084ff;
+            color: white;
+            padding: 16px 24px;
+            font-size: 1.3em;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .list {
+            padding: 24px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+        }
+
+        .empty {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-size: 1.1em;
+        }
+
+        .back-btn {
+            display: block;
+            width: fit-content;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background: #0084ff;
+            color: white;
+            border: none;
+            border-radius: 24px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
+        }
+
+        .batch-actions {
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .batch-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #searchInput {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            width: 200px;
+            font-size: 0.95em;
+        }
+
+        #searchBtn {
+            background: #0084ff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+
+        #searchBtn:hover {
+            background: #006edc;
+        }
+
+        .batch-delete-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .batch-delete-btn:disabled {
+            background: #aaa;
+            cursor: not-allowed;
+        }
+
+        /* 确认模态框 - 调整为页面中间偏上 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 20vh;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            width: 320px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .modal-cancel {
+            background: #eee;
+            color: #333;
+        }
+
+        .modal-confirm {
+            background: #dc3545;
+            color: white;
+        }
+
+        /* Toast 提示 - 移至右上角 */
+        .toast {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            min-width: 200px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            color: white;
+            font-size: 1em;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+            z-index: 2000;
+        }
+
+        .toast.success {
+            background: #28a745;
+        }
+
+        .toast.error {
+            background: #dc3545;
+        }
+
+        .toast.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* 高亮行 */
+        tr.highlight {
+            background-color: #e6f7ff !important;
+        }
+
+        /* 无结果提示 */
+        .no-results {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-size: 1.1em;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>已上传文档列表</header>
+    <div class="list">
+        <div class="batch-actions">
+            <div class="batch-left">
+                <label><input type="checkbox" id="selectAll"> 全选</label>
+                <button class="batch-delete-btn" id="batchDeleteBtn" disabled>批量删除</button>
+            </div>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="搜索文档名称...">
+                <button id="searchBtn">搜索</button>
+            </div>
+        </div>
+        <table id="docTable">
+            <thead>
+            <tr>
+                <th><input type="checkbox" id="headerCheckbox" style="display:none;"></th>
+                <th>文档名称</th>
+                <th>创建时间</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div id="emptyMsg" class="empty" style="display: none;">暂无上传文档</div>
+        <div id="noResultsMsg" class="no-results">无匹配文档</div>
+    </div>
+    <button class="back-btn" onclick="window.close()">关闭页面</button>
+</div>
+
+<!-- 确认删除模态框 -->
+<div class="modal" id="confirmModal">
+    <div class="modal-content">
+        <h3>确认删除</h3>
+        <p id="modalMessage">确定要删除选中的文档吗？<br>删除后无法恢复！</p>
+        <div class="modal-buttons">
+            <button class="modal-btn modal-cancel" id="cancelDelete">取消</button>
+            <button class="modal-btn modal-confirm" id="confirmDelete">确认删除</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast 提示 -->
+<div id="toast" class="toast"></div>
+
+<script>
+    function showToast(message, type = 'error') {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = 'toast ' + type;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function formatDateTime(dateTimeStr) {
+        return dateTimeStr || '未知时间';
+    }
+
+    let toDeleteMd5s = [];
+    let allRows = []; // 缓存所有表格行，用于搜索过滤
+
+    function openConfirmModal(md5s, isBatch = false) {
+        toDeleteMd5s = md5s;
+        const msg = document.getElementById('modalMessage');
+        if (isBatch && md5s.length > 1) {
+            msg.innerHTML = `确定要删除这 <strong>${md5s.length}</strong> 个文档吗？<br>删除后无法恢复！`;
+        } else {
+            msg.innerHTML = '确定要删除该文档吗？<br>删除后无法恢复！';
+        }
+        document.getElementById('confirmModal').classList.add('active');
+    }
+
+    async function performDelete() {
+        if (toDeleteMd5s.length === 0) return;
+
+        try {
+            const res = await fetch('/app/delete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(toDeleteMd5s)
+            });
+            const data = await res.json();
+
+            if (data.code === 0) {
+                showToast(`删除成功（${toDeleteMd5s.length} 个）`, 'success');
+                loadDocs();
+            } else {
+                showToast(data.msg || '删除失败', 'error');
+            }
+        } catch (err) {
+            showToast('删除请求失败，请检查网络', 'error');
+        } finally {
+            document.getElementById('confirmModal').classList.remove('active');
+            toDeleteMd5s = [];
+        }
+    }
+
+    function filterDocs(keyword) {
+        keyword = keyword.trim().toLowerCase();
+        const tbody = document.querySelector('#docTable tbody');
+        const noResults = document.getElementById('noResultsMsg');
+        let visibleCount = 0;
+
+        allRows.forEach(tr => {
+            const fileNameCell = tr.cells[1].textContent; // 文档名称列
+            const matches = keyword === '' || fileNameCell.toLowerCase().includes(keyword);
+            tr.style.display = matches ? '' : 'none';
+            if (matches) visibleCount++;
+        });
+
+        // 显示/隐藏提示
+        document.getElementById('emptyMsg').style.display = 'none';
+        document.getElementById('docTable').style.display = visibleCount > 0 ? 'table' : 'none';
+        noResults.style.display = visibleCount === 0 && keyword !== '' ? 'block' : 'none';
+    }
+
+    async function loadDocs() {
+        try {
+            const res = await fetch('/app/getDoc');
+            const data = await res.json();
+
+            const tbody = document.querySelector('#docTable tbody');
+            tbody.innerHTML = '';
+            allRows = [];
+
+            if (data.code === 0 && data.data && data.data.docs && data.data.docs.length > 0) {
+                data.data.docs.forEach(doc => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><input type="checkbox" class="row-checkbox" value="${doc.fileMd5}"></td>
+                        <td>${doc.fileName || '未知文件名'}</td>
+                        <td>${formatDateTime(doc.createdAt)}</td>
+                        <td><button class="delete-btn" data-md5="${doc.fileMd5}">删除</button></td>
+                    `;
+                    // 点击行定位
+                    tr.onclick = (e) => {
+                        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+                        document.querySelectorAll('tr.highlight').forEach(r => r.classList.remove('highlight'));
+                        tr.classList.add('highlight');
+                        tr.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    };
+                    tbody.appendChild(tr);
+                    allRows.push(tr);
+                });
+
+                // 绑定删除按钮
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.onclick = (e) => {
+                        e.stopPropagation(); // 防止触发行点击
+                        openConfirmModal([btn.dataset.md5]);
+                    };
+                });
+
+                document.getElementById('docTable').style.display = 'table';
+                document.getElementById('emptyMsg').style.display = 'none';
+                document.getElementById('noResultsMsg').style.display = 'none';
+            } else {
+                document.getElementById('emptyMsg').style.display = 'block';
+                document.getElementById('docTable').style.display = 'none';
+                document.getElementById('noResultsMsg').style.display = 'none';
+            }
+        } catch (err) {
+            console.error('加载文档列表失败:', err);
+            document.getElementById('emptyMsg').textContent = '加载失败，请刷新重试';
+            document.getElementById('emptyMsg').style.display = 'block';
+            document.getElementById('docTable').style.display = 'none';
+        }
+
+        // 重置批量选择
+        document.getElementById('selectAll').checked = false;
+        document.getElementById('batchDeleteBtn').disabled = true;
+        document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false);
+    }
+
+    // 全选逻辑
+    document.getElementById('selectAll').onchange = function () {
+        document.querySelectorAll('.row-checkbox').forEach(cb => {
+            cb.checked = this.checked;
+        });
+        updateBatchButton();
+    };
+
+    document.addEventListener('change', e => {
+        if (e.target.classList.contains('row-checkbox')) {
+            updateBatchButton();
+            const allChecked = Array.from(document.querySelectorAll('.row-checkbox')).every(cb => cb.checked);
+            document.getElementById('selectAll').checked = allChecked;
+        }
+    });
+
+    function updateBatchButton() {
+        const checked = document.querySelectorAll('.row-checkbox:checked');
+        document.getElementById('batchDeleteBtn').disabled = checked.length === 0;
+    }
+
+    document.getElementById('batchDeleteBtn').onclick = () => {
+        const checked = document.querySelectorAll('.row-checkbox:checked');
+        if (checked.length === 0) return;
+        const md5s = Array.from(checked).map(cb => cb.value);
+        openConfirmModal(md5s, true);
+    };
+
+    // 模态框控制
+    document.getElementById('cancelDelete').onclick = () => {
+        document.getElementById('confirmModal').classList.remove('active');
+        toDeleteMd5s = [];
+    };
+    document.getElementById('confirmDelete').onclick = performDelete;
+
+    document.getElementById('confirmModal').onclick = e => {
+        if (e.target === document.getElementById('confirmModal')) {
+            document.getElementById('confirmModal').classList.remove('active');
+            toDeleteMd5s = [];
+        }
+    };
+
+    // 搜索功能
+    document.getElementById('searchBtn').onclick = () => {
+        const keyword = document.getElementById('searchInput').value;
+        filterDocs(keyword);
+    };
+
+    document.getElementById('searchInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            const keyword = e.target.value;
+            filterDocs(keyword);
+        }
+    });
+
+    document.getElementById('searchInput').addEventListener('input', e => filterDocs(e.target.value));
+
+    loadDocs();
+</script>
+</body>
+</html>
