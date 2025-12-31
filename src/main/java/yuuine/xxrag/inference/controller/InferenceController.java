@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import yuuine.xxrag.dto.request.InferenceRequest;
-import yuuine.xxrag.inference.dto.response.InferenceResponse;
-import yuuine.xxrag.inference.service.InferenceService;
+import yuuine.xxrag.dto.response.InferenceResponse;
+import yuuine.xxrag.inference.api.InferenceService;
 
 @RestController
 @RequestMapping("/inference")

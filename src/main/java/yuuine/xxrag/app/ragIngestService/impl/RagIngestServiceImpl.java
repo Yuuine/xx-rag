@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import yuuine.xxrag.app.client.IngestionClient;
 
 import yuuine.xxrag.app.exception.BusinessException;
 import yuuine.xxrag.app.ragIngestService.RagIngestService;
@@ -19,7 +18,6 @@ import java.util.List;
 public class RagIngestServiceImpl implements RagIngestService {
 
 
-    private final IngestionClient ingestionClient;
     private final DocumentIngestionService documentIngestionService;
 
     @Override

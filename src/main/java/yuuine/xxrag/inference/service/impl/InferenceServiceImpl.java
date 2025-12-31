@@ -12,8 +12,8 @@ import yuuine.xxrag.inference.config.DeepSeekProperties;
 import yuuine.xxrag.inference.dto.request.ChatRequest;
 import yuuine.xxrag.dto.request.InferenceRequest;
 import yuuine.xxrag.inference.dto.response.ChatResponse;
-import yuuine.xxrag.inference.dto.response.InferenceResponse;
-import yuuine.xxrag.inference.service.InferenceService;
+import yuuine.xxrag.dto.response.InferenceResponse;
+import yuuine.xxrag.inference.api.InferenceService;
 
 import java.time.Duration;
 import java.util.List;

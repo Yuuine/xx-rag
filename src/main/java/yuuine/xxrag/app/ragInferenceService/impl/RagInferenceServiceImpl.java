@@ -4,10 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import yuuine.xxrag.dto.request.VectorSearchRequest;
-import yuuine.xxrag.app.client.InferenceClient;
-import yuuine.xxrag.app.config.RagPromptProperties;
+import yuuine.xxrag.inference.api.InferenceService;
 import yuuine.xxrag.dto.request.InferenceRequest;
-import yuuine.xxrag.app.api.dto.response.InferenceResponse;
+import yuuine.xxrag.app.config.RagPromptProperties;
+import yuuine.xxrag.dto.response.InferenceResponse;
 import yuuine.xxrag.app.api.dto.response.RagInferenceResponse;
 import yuuine.xxrag.app.exception.BusinessException;
 import yuuine.xxrag.app.ragInferenceService.RagInferenceService;
@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @Service
 public class RagInferenceServiceImpl implements RagInferenceService {
 
-    private final InferenceClient inferenceClient;
+    private final InferenceService inferenceService;
     private final RagPromptProperties ragPromptProperties;
 
     @Override
@@ -52,9 +52,9 @@ public class RagInferenceServiceImpl implements RagInferenceService {
             InferenceRequest inferenceReq = buildInferenceRequest(combinedPrompt);
             log.debug("推理请求构建完成");
 
-            // 调用推理服务
+            // 调用推理服务 - 直接调用服务方法
             log.info("调用推理服务，查询: {}", appRequest.getQuery());
-            InferenceResponse inferenceResponse = inferenceClient.chat(inferenceReq);
+            InferenceResponse inferenceResponse = inferenceService.infer(inferenceReq);
             log.info("推理服务调用完成，查询: {}", appRequest.getQuery());
 
             // 封装返回结果

@@ -3,7 +3,6 @@ package yuuine.xxrag.app.ragVectorService.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import yuuine.xxrag.app.client.VectorClient;
 import yuuine.xxrag.dto.request.VectorAddRequest;
 import yuuine.xxrag.dto.common.VectorAddResult;
 import yuuine.xxrag.dto.request.VectorSearchRequest;
@@ -19,7 +18,6 @@ import java.util.List;
 @Slf4j
 public class RagVectorServiceImpl implements RagVectorService {
 
-    private final VectorClient vectorClient;
     private final VectorApi vectorApi;
 
     @Override
