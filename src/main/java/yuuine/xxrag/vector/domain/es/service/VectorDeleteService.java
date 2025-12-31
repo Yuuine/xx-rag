@@ -15,7 +15,7 @@ public class VectorDeleteService {
 
     private final RagChunkDocumentRepository ragChunkDocumentRepository;
 
-    public void deleteByFileMd5s(List<String> fileMd5s) {
+    public void deleteChunksByFileMd5s(List<String> fileMd5s) {
         if (fileMd5s == null || fileMd5s.isEmpty()) {
             return;
         }

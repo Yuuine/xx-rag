@@ -59,13 +59,13 @@ public class VectorApiImpl implements VectorApi {
     }
 
     @Override
-    public void deleteByFileMd5s(List<String> fileMd5s) {
+    public void deleteChunksByFileMd5s(List<String> fileMd5s) {
         if (fileMd5s == null || fileMd5s.isEmpty()) {
             log.warn("收到空的 fileMd5 列表，跳过删除");
             return;
         }
         log.info("接收到批量删除请求，fileMd5 数量: {}", fileMd5s.size());
-        vectorDeleteService.deleteByFileMd5s(fileMd5s);
+        vectorDeleteService.deleteChunksByFileMd5s(fileMd5s);
         log.info("批量删除成功");
     }
 }

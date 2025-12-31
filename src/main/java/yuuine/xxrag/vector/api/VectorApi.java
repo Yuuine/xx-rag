@@ -25,5 +25,5 @@ public interface VectorApi {
     /**
      * 根据文件 MD5 批量删除向量（其他模块直接调用）
      */
-    void deleteByFileMd5s(List<String> fileMd5s);
+    void deleteChunksByFileMd5s(List<String> fileMd5s);
 }
