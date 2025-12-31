@@ -1,11 +1,13 @@
-package yuuine.xxrag.ingestion.service;
+package yuuine.xxrag.ingestion.api;
 
 
+import org.springframework.modulith.NamedInterface;
 import org.springframework.web.multipart.MultipartFile;
-import yuuine.xxrag.ingestion.dto.response.IngestResponse;
+import yuuine.xxrag.dto.response.IngestResponse;
 
 import java.util.List;
 
+@NamedInterface("ingestion-api")
 public interface DocumentIngestionService {
 
     IngestResponse ingest(List<MultipartFile> files);

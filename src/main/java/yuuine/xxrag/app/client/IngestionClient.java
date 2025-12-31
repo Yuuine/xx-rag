@@ -5,7 +5,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
-import yuuine.xxrag.app.api.dto.response.RagIngestResponse;
+import yuuine.xxrag.dto.response.IngestResponse;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ import java.util.List;
 public interface IngestionClient {
 
     @PostMapping(value = "/ingest", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    RagIngestResponse ingest(
+    IngestResponse ingest(
             @RequestPart("files") List<MultipartFile> files
     );
 }

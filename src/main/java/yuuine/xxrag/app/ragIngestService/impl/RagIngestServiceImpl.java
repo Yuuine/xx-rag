@@ -5,9 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.app.client.IngestionClient;
-import yuuine.xxrag.app.api.dto.response.RagIngestResponse;
+
 import yuuine.xxrag.app.exception.BusinessException;
 import yuuine.xxrag.app.ragIngestService.RagIngestService;
+import yuuine.xxrag.ingestion.api.DocumentIngestionService;
+import yuuine.xxrag.dto.response.IngestResponse;
 
 import java.util.List;
 
@@ -18,26 +20,25 @@ public class RagIngestServiceImpl implements RagIngestService {
 
 
     private final IngestionClient ingestionClient;
+    private final DocumentIngestionService documentIngestionService;
 
     @Override
-    public RagIngestResponse upload(List<MultipartFile> files) {
-        log.debug("开始上传文件到ingestion服务，文件数量: {}", files.size());
-        log.info("上传文件到ingestion服务，文件名: {}", files.stream().map(MultipartFile::getOriginalFilename).toList());
+    public IngestResponse upload(List<MultipartFile> files) {
 
         try {
-            // 1. 将文件列表以 List<MultipartFile> files 的形式传入 app-ingestion
+            // 1. 将文件列表 List<files> 传入 ingestion
             // 2. 将得到的 chunks 封装返回 控制器，等待控制器下一步处理
-            RagIngestResponse response = ingestionClient.ingest(files);
+            IngestResponse response = documentIngestionService.ingest(files);
+
             if (response == null || response.getChunks() == null) {
-                log.error("Ingestion服务返回空结果");
-                throw new BusinessException("Ingestion服务返回空结果");
+                log.error("The ingestion service returned an empty result.");
+                throw new BusinessException("The ingestion service returned an empty result.");
             }
 
-            log.debug("Ingestion服务返回 {} 个chunks", response.getChunks().size());
             return response;
         } catch (Exception e) {
-            log.error("上传文件到ingestion服务失败", e);
-            throw new BusinessException("Ingestion服务调用失败: " + e.getMessage(), e);
+            log.error("Failed to upload file to Ingestion service", e);
+            throw new BusinessException("Ingestion service call failed:" + e.getMessage(), e);
         }
     }
 }

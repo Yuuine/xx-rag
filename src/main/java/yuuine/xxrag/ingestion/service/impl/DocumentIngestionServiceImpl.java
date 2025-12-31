@@ -3,14 +3,11 @@ package yuuine.xxrag.ingestion.service.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import yuuine.xxrag.dto.response.IngestResponse;
 import yuuine.xxrag.ingestion.assembler.ChunkAssembler;
 import yuuine.xxrag.ingestion.domain.models.SingleFileProcessResult;
 import yuuine.xxrag.ingestion.domain.service.ProcessSingleDocument;
-import yuuine.xxrag.ingestion.dto.response.ChunkResponse;
-import yuuine.xxrag.ingestion.dto.response.FileResult;
-import yuuine.xxrag.ingestion.dto.response.IngestResponse;
-import yuuine.xxrag.ingestion.dto.response.IngestSummary;
-import yuuine.xxrag.ingestion.service.DocumentIngestionService;
+import yuuine.xxrag.ingestion.api.DocumentIngestionService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +22,7 @@ public class DocumentIngestionServiceImpl implements DocumentIngestionService {
     @Override
     public IngestResponse ingest(List<MultipartFile> files) {
 
-        List<ChunkResponse> allChunks = new ArrayList<>();
+        List<IngestResponse.ChunkResponse> allChunks = new ArrayList<>();
         List<String> successFiles = new ArrayList<>();
         List<String> failedFiles = new ArrayList<>();
 
@@ -41,11 +38,11 @@ public class DocumentIngestionServiceImpl implements DocumentIngestionService {
             }
         }
 
-        FileResult fileResult = new FileResult();
+        IngestResponse.FileResult fileResult = new IngestResponse.FileResult();
         fileResult.setSuccessfulFiles(successFiles);
         fileResult.setFailedFiles(failedFiles);
 
-        IngestSummary summary = new IngestSummary();
+        IngestResponse.IngestSummary summary = new IngestResponse.IngestSummary();
         summary.setTotalFiles(files.size());
         summary.setFileResult(fileResult);
 

@@ -8,15 +8,16 @@ import yuuine.xxrag.app.api.AppService;
 import yuuine.xxrag.app.docService.DocService;
 import yuuine.xxrag.Result;
 import yuuine.xxrag.app.api.dto.request.InferenceRequest;
-import yuuine.xxrag.app.api.dto.request.VectorAddRequest;
-import yuuine.xxrag.app.api.dto.request.VectorAddResult;
+import yuuine.xxrag.VectorAddRequest;
+import yuuine.xxrag.VectorAddResult;
 import yuuine.xxrag.app.api.dto.response.DocList;
 import yuuine.xxrag.app.api.dto.response.RagInferenceResponse;
-import yuuine.xxrag.app.api.dto.response.RagIngestResponse;
+
 import yuuine.xxrag.app.ragInferenceService.RagInferenceService;
 import yuuine.xxrag.app.ragIngestService.RagIngestService;
 import yuuine.xxrag.app.ragVectorService.RagVectorService;
 import yuuine.xxrag.app.ragVectorService.VectorSearchResult;
+import yuuine.xxrag.dto.response.IngestResponse;
 
 
 import java.util.HashSet;
@@ -35,18 +36,16 @@ public class AppServiceImpl implements AppService {
 
     @Override
     public Result<Object> uploadFiles(List<MultipartFile> files) {
-        log.info("收到上传请求，文件数量: {}", files.size());
 
         if (files == null || files.isEmpty()) {
-            return Result.error("上传文件不能为空");
+            return Result.error("file not null");
         }
 
         // 1. 调用 rag-ingestion 服务，得到 chunk 结果
-        RagIngestResponse ragIngestResponse = ragIngestService.upload(files);
-        log.debug("文件解析完成，chunks数量: {}", ragIngestResponse.getChunks().size());
+        IngestResponse ragIngestResponse = ragIngestService.upload(files);
 
         // 2. 调用 rag-vector 服务，持久化 chunk
-        List<RagIngestResponse.ChunkResponse> chunkResponses = ragIngestResponse.getChunks();
+        List<IngestResponse.ChunkResponse> chunkResponses = ragIngestResponse.getChunks();
         //类型转换
         List<VectorAddRequest> chunks = chunkResponses.stream()
                 .map(chunk -> new VectorAddRequest(
@@ -58,7 +57,6 @@ public class AppServiceImpl implements AppService {
                         chunk.getCharCount()
                 ))
                 .toList();
-        log.debug("准备向量存储，chunks数量: {}", chunks.size());
         VectorAddResult vectorAddResult = ragVectorService.add(chunks);
 
         // 3. 提取唯一文件并持久化到 MySQL

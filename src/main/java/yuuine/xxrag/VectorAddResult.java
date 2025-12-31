@@ -1,4 +1,4 @@
-package yuuine.xxrag.vector.dto.response;
+package yuuine.xxrag;
 
 import lombok.Data;
 
@@ -11,4 +11,10 @@ public class VectorAddResult {
     private Integer failedChunk = 0;
     private List<VectorChunk> vectorChunks;
 
+    @Data
+    public static class VectorChunk {
+        private String chunkId;
+        private boolean success;
+        private String errorMessage;
+    }
 }

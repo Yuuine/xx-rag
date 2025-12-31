@@ -1,4 +1,4 @@
-package yuuine.xxrag.app.api.dto.request;
+package yuuine.xxrag;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

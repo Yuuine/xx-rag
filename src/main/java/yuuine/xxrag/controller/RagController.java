@@ -12,9 +12,9 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/app")
+@RequestMapping("/xx")
 @Slf4j
-public class AppController {
+public class RagController {
 
     private final AppService appService;  // 注入暴露接口
 

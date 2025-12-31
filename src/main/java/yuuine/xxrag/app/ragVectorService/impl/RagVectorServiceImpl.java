@@ -5,11 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import yuuine.xxrag.app.client.VectorClient;
 import yuuine.xxrag.app.api.dto.request.InferenceRequest;
-import yuuine.xxrag.app.api.dto.request.VectorAddRequest;
-import yuuine.xxrag.app.api.dto.request.VectorAddResult;
+import yuuine.xxrag.VectorAddRequest;
+import yuuine.xxrag.VectorAddResult;
 import yuuine.xxrag.app.exception.BusinessException;
 import yuuine.xxrag.app.ragVectorService.RagVectorService;
 import yuuine.xxrag.app.ragVectorService.VectorSearchResult;
+import yuuine.xxrag.vector.api.VectorApi;
 
 import java.util.List;
 
@@ -19,6 +20,7 @@ import java.util.List;
 public class RagVectorServiceImpl implements RagVectorService {
 
     private final VectorClient vectorClient;
+    private final VectorApi vectorApi;
 
     @Override
     public VectorAddResult add(List<VectorAddRequest> chunks) {
@@ -26,7 +28,7 @@ public class RagVectorServiceImpl implements RagVectorService {
         log.info("向量数据添加，源文件数量: {}", chunks.stream().map(VectorAddRequest::getSource).distinct().count());
 
         try {
-            VectorAddResult vectorAddResult = vectorClient.add(chunks);
+            VectorAddResult vectorAddResult = vectorApi.addVectors(chunks);
             if (vectorAddResult == null) {
                 log.error("Vector服务返回空结果");
                 throw new BusinessException("Vector服务返回空结果");
