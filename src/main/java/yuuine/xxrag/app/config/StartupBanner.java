@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class StartupBanner implements CommandLineRunner {
 
-    @Value("${server.port:8081}")
+    @Value("${server.port}")
     private int port;
 
     @Override
