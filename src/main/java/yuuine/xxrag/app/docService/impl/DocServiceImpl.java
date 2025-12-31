@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import yuuine.xxrag.app.docService.DocService;
 import yuuine.xxrag.app.docService.entity.RagDocuments;
 import yuuine.xxrag.app.docService.repository.DocMapper;
-import yuuine.xxrag.app.dto.response.DocList;
+import yuuine.xxrag.app.api.dto.response.DocList;
 import yuuine.xxrag.app.exception.BusinessException;
 import yuuine.xxrag.app.ragVectorService.RagVectorService;
 

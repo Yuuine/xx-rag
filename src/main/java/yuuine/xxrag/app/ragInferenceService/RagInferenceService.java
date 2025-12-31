@@ -1,7 +1,7 @@
 package yuuine.xxrag.app.ragInferenceService;
 
-import yuuine.xxrag.app.InferenceRequest;
-import yuuine.xxrag.app.dto.response.RagInferenceResponse;
+import yuuine.xxrag.app.api.dto.request.InferenceRequest;
+import yuuine.xxrag.app.api.dto.response.RagInferenceResponse;
 import yuuine.xxrag.app.ragVectorService.VectorSearchResult;
 
 import java.util.List;
