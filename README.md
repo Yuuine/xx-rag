@@ -80,3 +80,84 @@ CREATE TABLE rag_documents (
 );
 ```
 
+## Docker 部署
+
+### 环境准备
+
+1. 安装 Docker 和 Docker Compose
+2. 确保 Docker 服务正在运行
+
+### 一键部署
+
+运行以下命令进行一键部署：
+
+```bash
+# 给脚本添加执行权限
+chmod +x build-docker.sh deploy.sh stop.sh
+
+# 一键部署应用
+./deploy.sh
+```
+
+### 手动部署
+
+1. 构建项目 JAR 包：
+
+```bash
+mvn clean package -DskipTests
+```
+
+2. 构建 Docker 镜像：
+
+```bash
+docker build -t xx-rag:latest .
+```
+
+3. 启动服务：
+
+```bash
+docker-compose up -d
+```
+
+### 服务管理
+
+- 启动服务：`./deploy.sh`
+- 停止服务：`./stop.sh`
+- 查看日志：`docker-compose logs -f app`
+- 查看服务状态：`docker-compose ps`
+- 使用Makefile：`make deploy`、`make stop`、`make logs`
+
+### 访问服务
+
+- 应用访问地址：http://localhost:8081
+- MySQL 服务端口：3306
+- Elasticsearch 服务端口：9200
+
+### 环境变量配置
+
+可以在启动时通过环境变量配置应用参数，如 API 密钥等：
+
+```bash
+export DEEPSEEK_API_KEY=your_deepseek_api_key
+export EMBEDDING_API_KEY=your_embedding_api_key
+```
+
+### 容器说明
+
+- `xx-rag-app`：主应用容器，运行 Spring Boot 应用
+- `xx-rag-mysql`：MySQL 数据库容器
+- `xx-rag-elasticsearch`：Elasticsearch 向量数据库容器
+
+## 配置说明
+
+Docker 环境下使用 `application-docker.yml` 配置文件，该文件会从环境变量读取配置参数。
+
+主要可配置的环境变量：
+
+- `SPRING_DATASOURCE_URL`：MySQL 连接地址
+- `SPRING_DATASOURCE_USERNAME`：MySQL 用户名
+- `SPRING_DATASOURCE_PASSWORD`：MySQL 密码
+- `SPRING_ELASTICSEARCH_URIS`：Elasticsearch 连接地址
+- `DEEPSEEK_API_KEY`：DeepSeek API 密钥
+- `EMBEDDING_API_KEY`：嵌入模型 API 密钥
+

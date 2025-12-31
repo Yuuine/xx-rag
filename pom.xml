@@ -159,6 +159,7 @@
     </dependencyManagement>
 
     <build>
+        <finalName>xx-rag-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
