@@ -12,9 +12,9 @@ import yuuine.xxrag.vector.domain.es.service.VectorAddService;
 import yuuine.xxrag.vector.domain.es.service.VectorDeleteService;
 import yuuine.xxrag.vector.domain.es.service.VectorSearchService;
 import yuuine.xxrag.VectorAddRequest;
-import yuuine.xxrag.vector.dto.request.VectorSearchRequest;
+import yuuine.xxrag.VectorSearchRequest;
 import yuuine.xxrag.VectorAddResult;
-import yuuine.xxrag.vector.dto.response.VectorSearchResult;
+import yuuine.xxrag.VectorSearchResult;
 
 import java.io.IOException;
 import java.util.List;

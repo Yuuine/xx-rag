@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.app.api.AppService;
 import yuuine.xxrag.Result;
-import yuuine.xxrag.app.api.dto.request.InferenceRequest;
+import yuuine.xxrag.VectorSearchRequest;
 
 import java.util.List;
 
@@ -39,7 +39,7 @@ public class AppController {
 
     @PostMapping("/search")
     public Result<Object> search(
-            @RequestBody InferenceRequest query
+            @RequestBody VectorSearchRequest query
     ) {
         return appService.search(query);
     }

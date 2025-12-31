@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.Result;
+import yuuine.xxrag.VectorSearchRequest;
 import yuuine.xxrag.app.api.AppService;
-import yuuine.xxrag.app.api.dto.request.InferenceRequest;
 
 import java.util.List;
 
@@ -39,7 +39,7 @@ public class RagController {
 
     @PostMapping("/search")
     public Result<Object> search(
-            @RequestBody InferenceRequest query
+            @RequestBody VectorSearchRequest query
     ) {
         return appService.search(query);
     }

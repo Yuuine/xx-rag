@@ -4,19 +4,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import yuuine.xxrag.*;
 import yuuine.xxrag.app.api.AppService;
 import yuuine.xxrag.app.docService.DocService;
-import yuuine.xxrag.Result;
-import yuuine.xxrag.app.api.dto.request.InferenceRequest;
-import yuuine.xxrag.VectorAddRequest;
-import yuuine.xxrag.VectorAddResult;
 import yuuine.xxrag.app.api.dto.response.DocList;
 import yuuine.xxrag.app.api.dto.response.RagInferenceResponse;
 
 import yuuine.xxrag.app.ragInferenceService.RagInferenceService;
 import yuuine.xxrag.app.ragIngestService.RagIngestService;
 import yuuine.xxrag.app.ragVectorService.RagVectorService;
-import yuuine.xxrag.app.ragVectorService.VectorSearchResult;
 import yuuine.xxrag.dto.response.IngestResponse;
 
 
@@ -92,10 +88,10 @@ public class AppServiceImpl implements AppService {
     }
 
     @Override
-    public Result<Object> search(InferenceRequest query) {
+    public Result<Object> search(VectorSearchRequest query) {
         log.info("收到搜索请求，查询: {}", query.getQuery());
 
-        if (query == null || query.getQuery() == null || query.getQuery().trim().isEmpty()) {
+        if (query.getQuery() == null || query.getQuery().trim().isEmpty()) {
             return Result.error("查询内容不能为空");
         }
 

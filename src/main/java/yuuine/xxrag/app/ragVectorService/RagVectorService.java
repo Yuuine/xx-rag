@@ -1,8 +1,6 @@
 package yuuine.xxrag.app.ragVectorService;
 
-import yuuine.xxrag.app.api.dto.request.InferenceRequest;
-import yuuine.xxrag.VectorAddRequest;
-import yuuine.xxrag.VectorAddResult;
+import yuuine.xxrag.*;
 
 import java.util.List;
 
@@ -10,7 +8,7 @@ public interface RagVectorService {
 
     VectorAddResult add(List<VectorAddRequest> chunks);
 
-    List<VectorSearchResult> search(InferenceRequest query);
+    List<VectorSearchResult> search(VectorSearchRequest query);
 
     void deleteChunksByFileMd5s(List<String> fileMd5s);
 }

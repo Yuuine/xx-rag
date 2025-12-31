@@ -1,13 +1,11 @@
-package yuuine.xxrag.inference.dto.request;
+package yuuine.xxrag;
 
 import lombok.Data;
-
 
 @Data
 public class InferenceRequest {
 
     private String query;
 
-    private Integer topK;
-
+    private Integer topK = 5;
 }

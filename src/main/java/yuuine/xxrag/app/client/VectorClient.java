@@ -4,10 +4,10 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import yuuine.xxrag.app.api.dto.request.InferenceRequest;
+import yuuine.xxrag.InferenceRequest;
 import yuuine.xxrag.VectorAddRequest;
 import yuuine.xxrag.VectorAddResult;
-import yuuine.xxrag.app.ragVectorService.VectorSearchResult;
+import yuuine.xxrag.VectorSearchResult;
 
 import java.util.List;
 

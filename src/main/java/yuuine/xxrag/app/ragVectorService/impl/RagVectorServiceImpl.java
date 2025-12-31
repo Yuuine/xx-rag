@@ -4,12 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import yuuine.xxrag.app.client.VectorClient;
-import yuuine.xxrag.app.api.dto.request.InferenceRequest;
 import yuuine.xxrag.VectorAddRequest;
 import yuuine.xxrag.VectorAddResult;
+import yuuine.xxrag.VectorSearchRequest;
 import yuuine.xxrag.app.exception.BusinessException;
 import yuuine.xxrag.app.ragVectorService.RagVectorService;
-import yuuine.xxrag.app.ragVectorService.VectorSearchResult;
+import yuuine.xxrag.VectorSearchResult;
 import yuuine.xxrag.vector.api.VectorApi;
 
 import java.util.List;
@@ -43,12 +43,16 @@ public class RagVectorServiceImpl implements RagVectorService {
     }
 
     @Override
-    public List<VectorSearchResult> search(InferenceRequest query) {
+    public List<VectorSearchResult> search(VectorSearchRequest query) {
         log.debug("开始向量搜索，查询: {}", query.getQuery());
         log.info("向量搜索请求，查询: {}", query.getQuery());
 
         try {
-            List<VectorSearchResult> vectorSearchResults = vectorClient.search(query);
+            VectorSearchRequest vectorSearchRequest = new VectorSearchRequest();
+            vectorSearchRequest.setQuery(query.getQuery());
+            vectorSearchRequest.setTopK(query.getTopK());
+            
+            List<VectorSearchResult> vectorSearchResults = vectorApi.search(vectorSearchRequest);
             if (vectorSearchResults == null) {
                 log.error("Vector服务搜索返回空结果");
                 throw new BusinessException("Vector服务搜索返回空结果");

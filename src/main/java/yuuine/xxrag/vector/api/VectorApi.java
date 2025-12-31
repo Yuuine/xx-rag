@@ -2,9 +2,9 @@ package yuuine.xxrag.vector.api;
 
 import org.springframework.modulith.NamedInterface;
 import yuuine.xxrag.VectorAddRequest;
-import yuuine.xxrag.vector.dto.request.VectorSearchRequest;
+import yuuine.xxrag.VectorSearchRequest;
 import yuuine.xxrag.VectorAddResult;
-import yuuine.xxrag.vector.dto.response.VectorSearchResult;
+import yuuine.xxrag.VectorSearchResult;
 
 import java.io.IOException;
 import java.util.List;

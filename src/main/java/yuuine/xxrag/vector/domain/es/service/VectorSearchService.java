@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 import yuuine.xxrag.vector.config.RetrievalProperties;
 import yuuine.xxrag.vector.domain.embedding.service.EmbeddingService;
 import yuuine.xxrag.vector.domain.es.model.RagChunkDocument;
-import yuuine.xxrag.vector.dto.request.VectorSearchRequest;
-import yuuine.xxrag.vector.dto.response.VectorSearchResult;
+import yuuine.xxrag.VectorSearchRequest;
+import yuuine.xxrag.VectorSearchResult;
 
 import java.io.IOException;
 import java.util.ArrayList;

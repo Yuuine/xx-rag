@@ -51,22 +51,23 @@ public class DocServiceImpl implements DocService {
         return docList;
     }
 
-    // DocServiceImpl.java
     @Override
-    @Transactional // 可选：如果 DB 删除需事务（但向量删除不在事务内）
+    @Transactional
     public void deleteDocuments(List<String> fileMd5s) {
         log.info("开始批量删除文档，数量: {}", fileMd5s.size());
 
-
-        int deletedCount = docMapper.batchDeleteByFileMd5(fileMd5s);
-        log.info("MySQL 删除文档 {} 条", deletedCount);
-
+        // 删除向量库
         try {
             ragVectorService.deleteChunksByFileMd5s(fileMd5s);
             log.info("向量库 chunks 删除完成");
         } catch (Exception e) {
-            log.warn("向量删除部分失败，将由后台任务补偿", e);
+            log.error("向量库删除失败，放弃数据库删除操作", e);
+            throw new BusinessException("向量库删除失败，无法继续删除文档", e);
         }
+
+        // 删除 MySQL（可回滚）
+        int deletedCount = docMapper.batchDeleteByFileMd5(fileMd5s);
+        log.info("MySQL 删除文档 {} 条", deletedCount);
     }
 
 }

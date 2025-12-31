@@ -10,7 +10,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 import yuuine.xxrag.inference.config.DeepSeekProperties;
 import yuuine.xxrag.inference.dto.request.ChatRequest;
-import yuuine.xxrag.inference.dto.request.InferenceRequest;
+import yuuine.xxrag.InferenceRequest;
 import yuuine.xxrag.inference.dto.response.ChatResponse;
 import yuuine.xxrag.inference.dto.response.InferenceResponse;
 import yuuine.xxrag.inference.service.InferenceService;
