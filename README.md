@@ -72,12 +72,19 @@ app:
 ## 数据库设计
 
 ```mysql
-CREATE TABLE rag_documents (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    file_md5 VARCHAR(64) NOT NULL UNIQUE,
-    file_name VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+create table rag.rag_documents
+(
+    id         bigint auto_increment
+        primary key,
+    file_md5   char(32)                           not null,
+    file_name  varchar(255)                       not null,
+    created_at datetime default CURRENT_TIMESTAMP null,
+    constraint file_md5
+        unique (file_md5)
 );
+
+create index idx_created
+    on rag.rag_documents (created_at);
 ```
 
 ## Docker 部署
