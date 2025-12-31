@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Flux;
 import yuuine.xxrag.app.api.AppService;
 import yuuine.xxrag.app.docService.DocService;
 import yuuine.xxrag.app.api.dto.response.DocList;
@@ -13,6 +14,7 @@ import yuuine.xxrag.app.ragInferenceService.RagInferenceService;
 import yuuine.xxrag.app.ragIngestService.RagIngestService;
 import yuuine.xxrag.app.ragVectorService.RagVectorService;
 import yuuine.xxrag.dto.common.Result;
+import yuuine.xxrag.dto.common.StreamResult;
 import yuuine.xxrag.dto.common.VectorAddResult;
 import yuuine.xxrag.dto.common.VectorSearchResult;
 import yuuine.xxrag.dto.request.VectorAddRequest;
@@ -108,4 +110,12 @@ public class AppServiceImpl implements AppService {
         // 3. 返回完整结果（包含答案和引用信息）
         return Result.success(ragInferenceResponse);
     }
+
+    @Override
+    public Flux<StreamResult<Object>> searchStream(VectorSearchRequest query) {
+        List<VectorSearchResult> results = ragVectorService.search(query);
+        return ragInferenceService.inferenceStream(query, results);
+    }
+
+
 }

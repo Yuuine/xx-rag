@@ -25,6 +25,7 @@ deepseek:
   temperature: 0.7
   max-tokens: 2048
   timeout-seconds: 120
+  stream: true
 
 rag:
   prompt:

@@ -2,7 +2,9 @@ package yuuine.xxrag.app.api;
 
 import org.springframework.modulith.NamedInterface;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Flux;
 import yuuine.xxrag.dto.common.Result;
+import yuuine.xxrag.dto.common.StreamResult;
 import yuuine.xxrag.dto.request.VectorSearchRequest;
 
 import java.util.List;
@@ -29,4 +31,6 @@ public interface AppService {
      * 搜索并推理
      */
     Result<Object> search(VectorSearchRequest query);
+
+    Flux<StreamResult<Object>> searchStream(VectorSearchRequest query);
 }
