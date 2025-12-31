@@ -6,18 +6,6 @@
 
 set -e  # 遇到错误退出
 
-# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-# 加载 .env 文件
-# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-if [ -f ".env" ]; then
-    while IFS='=' read -r key value; do
-        if [[ ! $key =~ ^# ]] && [[ -n $key ]]; then
-            export "$key=$value"
-        fi
-    done < .env
-    info "已加载 .env 配置"
-fi
-
 # -------------------------------
 # 颜色输出函数
 # -------------------------------
@@ -43,6 +31,18 @@ COMPOSE_CMD=""
 command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
+
+# >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+# 加载 .env 文件
+# <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+if [ -f ".env" ]; then
+    while IFS='=' read -r key value; do
+        if [[ ! $key =~ ^# ]] && [[ -n $key ]]; then
+            export "$key=$value"
+        fi
+    done < .env
+    info "已加载 .env 配置"
+fi
 
 # -------------------------------
 # 检查依赖
