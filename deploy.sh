@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # -------------------------------
-# 潇潇 RAG 一键部署脚本
+# 潇潇 RAG 一键部署脚本 (Linux)
 # -------------------------------
 
 set -e  # 遇到错误退出
@@ -21,6 +21,11 @@ warn()    { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error()   { echo -e "${RED}[ERROR]${NC} $1"; }
 
 # -------------------------------
+# 全局变量，保存 Compose 命令
+# -------------------------------
+COMPOSE_CMD=""
+
+# -------------------------------
 # 检查命令是否存在
 # -------------------------------
 command_exists() {
@@ -36,11 +41,18 @@ check_dependencies() {
         error "Docker 未安装，请先安装 Docker"
         exit 1
     fi
-    if ! command_exists docker-compose && ! command_exists "docker compose"; then
+
+    # 检测 docker-compose 或 docker compose
+    if command_exists docker-compose; then
+        COMPOSE_CMD="docker-compose"
+    elif docker compose version >/dev/null 2>&1; then
+        COMPOSE_CMD="docker compose"
+    else
         error "Docker Compose 未安装，请先安装 Docker Compose"
         exit 1
     fi
-    success "依赖检查通过"
+
+    success "依赖检查通过，使用 Compose 命令: $COMPOSE_CMD"
 }
 
 # -------------------------------
@@ -55,17 +67,6 @@ check_ports() {
             info "端口 $port 可用"
         fi
     done
-}
-
-# -------------------------------
-# 选择 Docker Compose 命令
-# -------------------------------
-get_compose_cmd() {
-    if command_exists docker-compose; then
-        echo "docker-compose"
-    else
-        echo "docker compose"
-    fi
 }
 
 # -------------------------------
@@ -86,7 +87,6 @@ build_docker_image() {
 # 启动服务
 # -------------------------------
 start_services() {
-    COMPOSE_CMD=$(get_compose_cmd)
     info "启动 Docker Compose 服务..."
     $COMPOSE_CMD up -d --build
     success "服务已启动"
@@ -118,7 +118,6 @@ wait_for_services() {
 # 显示状态
 # -------------------------------
 show_status() {
-    COMPOSE_CMD=$(get_compose_cmd)
     info "服务状态："
     $COMPOSE_CMD ps
 }
@@ -127,7 +126,6 @@ show_status() {
 # 停止服务
 # -------------------------------
 stop_services() {
-    COMPOSE_CMD=$(get_compose_cmd)
     info "停止服务..."
     $COMPOSE_CMD down
     success "服务已停止"
@@ -137,7 +135,6 @@ stop_services() {
 # 清理部署（容器+镜像+卷）
 # -------------------------------
 clean_services() {
-    COMPOSE_CMD=$(get_compose_cmd)
     info "清理部署..."
     $COMPOSE_CMD down -v
     docker rmi xx-rag-app:latest 2>/dev/null || true
@@ -153,9 +150,9 @@ show_info() {
     info "Spring Boot 应用: http://localhost:8081"
     info "MySQL: 3306 (root/123456)"
     info "Elasticsearch: 9200"
-    info "查看日志: ${COMPOSE_CMD} logs -f app"
-    info "停止服务: ${COMPOSE_CMD} down"
-    info "重启服务: ${COMPOSE_CMD} restart"
+    info "查看日志: $COMPOSE_CMD logs -f app"
+    info "停止服务: $COMPOSE_CMD down"
+    info "重启服务: $COMPOSE_CMD restart"
     success "======================================="
 }
 
@@ -179,7 +176,6 @@ case "${1:-deploy}" in
         show_status
         ;;
     logs)
-        COMPOSE_CMD=$(get_compose_cmd)
         $COMPOSE_CMD logs -f app
         ;;
     clean)
