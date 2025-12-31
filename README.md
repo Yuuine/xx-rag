@@ -36,7 +36,7 @@ Spring multipart 模块化设计
 - Java 17
 - Maven 3.6+
 - MySQL 8.0+
-- Elasticsearch 9.0+
+- Elasticsearch 9.1.4
 - OCR 引擎 (Tesseract)
 
 
@@ -71,6 +71,9 @@ app:
 
 ## 数据库设计
 
+MySQL
+
+rag.rag_documents
 ```mysql
 create table rag.rag_documents
 (
@@ -85,6 +88,57 @@ create table rag.rag_documents
 
 create index idx_created
     on rag.rag_documents (created_at);
+```
+
+Elasticsearch
+
+rag_chunks
+```json
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0
+  },
+  "mappings": {
+    "properties": {
+      "chunkId": {
+        "type": "keyword"
+      },
+      "fileMd5": {
+        "type": "keyword"
+      },
+      "source": {
+        "type": "text"
+      },
+      "chunkIndex": {
+        "type": "integer"
+      },
+      "content": {
+        "type": "text",
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart"
+      },
+      "charCount": {
+        "type": "integer"
+      },
+      "embedding": {
+        "type": "dense_vector",
+        "dims": 1024,
+        "index": true,
+        "similarity": "cosine"
+      },
+      "embeddingDim": {
+        "type": "integer"
+      },
+      "model": {
+        "type": "keyword"
+      },
+      "createdAt": {
+        "type": "date"
+      }
+    }
+  }
+}
 ```
 
 ## Docker 部署
@@ -105,8 +159,32 @@ chmod +x deploy.sh
 ./deploy.sh deploy
 ```
 
+特别说明： 
+es 容器的版本是9.1.4，需要下载对应版本的 ik 分词器，否则无法一键部署
+
+### ik 分词器插件下载
+
+第一次启动时，由于缺少 ik 分词器和没有创建 es 索引映射，无法启动成功。
+
+1. 启动 my-es 容器，进入容器内部，使用命令安装 ik 分词器插件
+```bash
+docker start my-es
+docker exec -it my-es /bin/bash
+bin/elasticsearch-plugin install https://get.infini.cloud/elasticsearch/analysis-ik/9.1.4
+```
+2. 重启 my-es 容器，运行 [init-es-index.sh](init-es-index.sh) 脚本创建索引映射
+```bash
+docker restart my-es
+chmod +x init-es-index.sh
+./init-es-index.sh
+```
+
+在项目主目录运行 `./deploy.sh deploy` 成功启动应用
+
 ### 容器说明
 
 - `xx-rag-app`：主应用容器，运行 Spring Boot 应用
 - `my-mysql`：MySQL 数据库容器
 - `my-elasticsearch`：Elasticsearch 向量数据库容器
+
+各个服务的启动参数可根据实际情况调整
