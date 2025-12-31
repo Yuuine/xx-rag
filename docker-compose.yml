@@ -13,7 +13,9 @@ services:
       - ./mysql-init:/docker-entrypoint-initdb.d/
       - mysql_data:/var/lib/mysql
     command:
-      - innodb-buffer-pool-size=256M --max-allowed-packet=16M
+      - mysqld
+      - --innodb-buffer-pool-size=256M
+      - --max-allowed-packet=16M
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p123456" ]
       interval: 10s
