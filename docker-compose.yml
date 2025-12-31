@@ -1,60 +1,62 @@
-version: '3.8'
-
 services:
   mysql:
     image: mysql:8.0
-    container_name: xx-rag-mysql
+    container_name: my-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: rag
+      MYSQL_USER: user
+      MYSQL_PASSWORD: 123456
     ports:
       - "3306:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: rag
     volumes:
+      - ./mysql-init:/docker-entrypoint-initdb.d/
       - mysql_data:/var/lib/mysql
-    networks:
-      - rag-network
-    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p123456" ]
+      interval: 10s
+      retries: 10
+      start_period: 30s
 
   elasticsearch:
-    image: elasticsearch:8.15.0
-    container_name: xx-rag-elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.2.3
+    container_name: my-es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     ports:
       - "9200:9200"
       - "9300:9300"
-    environment:
-      - discovery.type=single-node
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - xpack.security.enabled=false
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
-    networks:
-      - rag-network
-    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -s http://localhost:9200 || exit 1" ]
+      interval: 10s
+      retries: 5
 
   app:
     build: .
     container_name: xx-rag-app
+    depends_on:
+      mysql:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
     ports:
       - "8081:8081"
-    depends_on:
-      - mysql
-      - elasticsearch
     environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/rag?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=root
-      - SPRING_ELASTICSEARCH_URIS=http://elasticsearch:9200
-    volumes:
-      - ./logs:/app/logs
-    networks:
-      - rag-network
-    restart: unless-stopped
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rag?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 123456
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+
 
 volumes:
   mysql_data:
   es_data:
-
-networks:
-  rag-network:
-    driver: bridge

@@ -1,17 +1,30 @@
-# 使用官方OpenJDK 17作为基础镜像
-FROM openjdk:17-jdk-slim
+FROM maven:3.9.9-eclipse-temurin-17 AS build
 
-# 设置工作目录
 WORKDIR /app
 
-# 复制jar文件到容器中
-COPY target/xx-rag-0.0.1-SNAPSHOT.jar app.jar
+# 复制 pom 并下载依赖
+COPY pom.xml .
+RUN /usr/share/maven/bin/mvn dependency:go-offline -B
 
-# 创建日志目录
-RUN mkdir -p ./logs
+# 复制源码并打包
+COPY src ./src
+RUN /usr/share/maven/bin/mvn clean package -DskipTests -B
 
-# 暴露应用端口
+# 运行阶段
+FROM openjdk:17-jdk-slim
+
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libglib2.0-0 libsm6 libxext6 libxrender-dev libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+RUN mkdir -p /app/logs
+
+COPY --from=build /app/target/xx-rag-0.0.1-SNAPSHOT.jar app.jar
+
 EXPOSE 8081
 
-# 启动应用
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xms256m", "-Xmx512g", "-jar", "app.jar"]
