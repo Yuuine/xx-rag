@@ -44,6 +44,38 @@ if [ -f ".env" ]; then
     info "已加载 .env 配置"
 fi
 
+# 检查必需的环境变量
+check_required_env_vars() {
+    info "检查必需的环境变量..."
+
+    # 检查 EMBEDDING_API_KEY
+    if [ -z "$EMBEDDING_API_KEY" ]; then
+        warn "警告: EMBEDDING_API_KEY 环境变量未设置!"
+        echo -n "请输入 DashScope Embedding API Key (或按回车跳过): "
+        read -r input_key
+        if [ -n "$input_key" ]; then
+            export EMBEDDING_API_KEY="$input_key"
+        else
+            error "错误: 必须提供 EMBEDDING_API_KEY"
+            exit 1
+        fi
+    fi
+
+    # 检查 DEEPSEEK_API_KEY
+    if [ -z "$DEEPSEEK_API_KEY" ]; then
+        warn "警告: DEEPSEEK_API_KEY 环境变量未设置!"
+        echo -n "请输入 DeepSeek API Key (或按回车跳过): "
+        read -r input_key
+        if [ -n "$input_key" ]; then
+            export DEEPSEEK_API_KEY="$input_key"
+        else
+            warn "警告: DEEPSEEK_API_KEY 未设置，推理功能可能无法正常工作"
+        fi
+    fi
+
+    success "环境变量检查完成"
+}
+
 # -------------------------------
 # 检查依赖
 # -------------------------------
@@ -173,6 +205,7 @@ show_info() {
 # -------------------------------
 case "${1:-deploy}" in
     deploy)
+        check_required_env_vars
         check_dependencies
         check_ports
         build_docker_image
