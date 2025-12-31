@@ -1,16 +1,11 @@
 FROM maven:3.9.9-eclipse-temurin-17 AS build
 
 WORKDIR /app
-
-# 复制 pom 并下载依赖
 COPY pom.xml .
-RUN /usr/share/maven/bin/mvn dependency:go-offline -B
-
-# 复制源码并打包
+RUN mvn dependency:go-offline -B
 COPY src ./src
-RUN /usr/share/maven/bin/mvn clean package -DskipTests -B
+RUN mvn clean package -DskipTests -B
 
-# 运行阶段
 FROM openjdk:17-jdk-slim
 
 ENV TZ=Asia/Shanghai
@@ -27,4 +22,4 @@ COPY --from=build /app/target/xx-rag-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8081
 
-ENTRYPOINT ["java", "-Xms256m", "-Xmx512g", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xms256m", "-Xmx256m", "-jar", "app.jar"]
