@@ -1,0 +1,35 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: inference
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+deepseek:
+  api-key:
+  base-url: https://api.deepseek.com/v1
+  model: deepseek-chat
+  temperature: 0.7
+  max-tokens: 2048
+  timeout-seconds: 120
+
+logging:
+  level:
+    yuuine.xxrag.inference: DEBUG
+    org.springframework.web.reactive: DEBUG
+
+  file:
+    name: ./logs/application.log
+
+  logback:
+    rollingpolicy:
+      max-file-size: 10MB
+      max-history: 7
+      total-size-cap: 1GB
+      file-name-pattern: ./logs/application.%d{yyyy-MM-dd}.%i.log

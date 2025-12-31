@@ -1,10 +1,17 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: app
+
 services:
   ingestion:
-    base-url: http://localhost:8080
-  vector:
     base-url: http://localhost:8081
-  inference:
+  vector:
     base-url: http://localhost:8082
+  inference:
+    base-url: http://localhost:8083
 
 rag:
   prompt:
@@ -14,38 +21,3 @@ rag:
       2. 回答需先给结论，再给论据。
       3. 若无足够信息，请回答"暂无相关信息"并说明原因。
       4. 回复自然、流畅，不要提及"文档"或"检索"等技术术语。
-
-spring:
-  application:
-    name: rag-app
-
-  datasource:
-    url: jdbc:mysql://localhost:3306/rag?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
-    username: root
-    password:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-
-mybatis:
-  mapper-locations: classpath:mapper/*.xml
-  configuration:
-    map-underscore-to-camel-case: true
-
-
-  servlet:
-    multipart:
-      enabled: true
-      max-file-size: 100MB
-      max-request-size: 100MB
-
-logging:
-  level:
-    yuuine.ragapp: debug
-
-  file:
-    name: ./logs/application.log
-
-  logback:
-    rollingpolicy:
-      max-file-size: 10MB
-      max-history: 7
-      total-size-cap: 1GB
