@@ -12,6 +12,8 @@ services:
     volumes:
       - ./mysql-init:/docker-entrypoint-initdb.d/
       - mysql_data:/var/lib/mysql
+    command:
+      - -innodb-buffer-pool-size=256M --max-allowed-packet=16M
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p123456" ]
       interval: 10s
@@ -25,7 +27,7 @@ services:
       - discovery.type=single-node
       - xpack.security.enabled=false
       - xpack.security.http.ssl.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - ES_JAVA_OPTS=-Xms256m -Xmx256m
     volumes:
       - es_data:/usr/share/elasticsearch/data
     ulimits:
@@ -51,6 +53,7 @@ services:
     ports:
       - "8081:8081"
     environment:
+      JAVA _OPTS: -Xms256m -Xmx256m
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rag?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: 123456
