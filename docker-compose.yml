@@ -55,7 +55,7 @@ services:
     ports:
       - "8081:8081"
     environment:
-      JAVA _OPTS: -Xms256m -Xmx256m
+      JAVA_OPTS: -Xms256m -Xmx256m
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rag?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: 123456
