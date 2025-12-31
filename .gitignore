@@ -4,6 +4,13 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# 日志文件
+logs/
+*.log
+*.log.*
+**/*.log
+**/*.log.*
+
 ### STS ###
 .apt_generated
 .classpath
