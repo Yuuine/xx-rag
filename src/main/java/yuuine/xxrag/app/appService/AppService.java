@@ -1,11 +1,8 @@
 package yuuine.xxrag.app.appService;
 
 import org.springframework.web.multipart.MultipartFile;
-import yuuine.ragapp.dto.common.Result;
-import yuuine.ragapp.dto.request.InferenceRequest;
-import yuuine.ragapp.dto.request.VectorAddResult;
-import yuuine.ragapp.dto.response.DocList;
-import yuuine.ragapp.dto.response.RagInferenceResponse;
+import yuuine.xxrag.app.dto.common.Result;
+import yuuine.xxrag.app.dto.request.InferenceRequest;
 
 import java.util.List;
 

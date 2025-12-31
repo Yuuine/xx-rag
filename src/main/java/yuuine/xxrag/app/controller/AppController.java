@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import yuuine.ragapp.appService.AppService;
-import yuuine.ragapp.dto.common.Result;
-import yuuine.ragapp.dto.request.InferenceRequest;
+import yuuine.xxrag.app.appService.AppService;
+import yuuine.xxrag.app.dto.common.Result;
+import yuuine.xxrag.app.dto.request.InferenceRequest;
 
 import java.util.List;
 

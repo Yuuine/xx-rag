@@ -3,13 +3,13 @@ package yuuine.xxrag.app.ragVectorService.impl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import yuuine.ragapp.client.VectorClient;
-import yuuine.ragapp.dto.request.InferenceRequest;
-import yuuine.ragapp.dto.request.VectorAddRequest;
-import yuuine.ragapp.dto.request.VectorAddResult;
-import yuuine.ragapp.exception.BusinessException;
-import yuuine.ragapp.ragVectorService.RagVectorService;
-import yuuine.ragapp.ragVectorService.VectorSearchResult;
+import yuuine.xxrag.app.client.VectorClient;
+import yuuine.xxrag.app.dto.request.InferenceRequest;
+import yuuine.xxrag.app.dto.request.VectorAddRequest;
+import yuuine.xxrag.app.dto.request.VectorAddResult;
+import yuuine.xxrag.app.exception.BusinessException;
+import yuuine.xxrag.app.ragVectorService.RagVectorService;
+import yuuine.xxrag.app.ragVectorService.VectorSearchResult;
 
 import java.util.List;
 

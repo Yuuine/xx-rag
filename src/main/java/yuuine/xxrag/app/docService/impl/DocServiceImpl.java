@@ -4,12 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import yuuine.ragapp.docService.DocService;
-import yuuine.ragapp.docService.entity.RagDocuments;
-import yuuine.ragapp.docService.repository.DocMapper;
-import yuuine.ragapp.dto.response.DocList;
-import yuuine.ragapp.exception.BusinessException;
-import yuuine.ragapp.ragVectorService.RagVectorService;
+import yuuine.xxrag.app.docService.DocService;
+import yuuine.xxrag.app.docService.entity.RagDocuments;
+import yuuine.xxrag.app.docService.repository.DocMapper;
+import yuuine.xxrag.app.dto.response.DocList;
+import yuuine.xxrag.app.exception.BusinessException;
+import yuuine.xxrag.app.ragVectorService.RagVectorService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

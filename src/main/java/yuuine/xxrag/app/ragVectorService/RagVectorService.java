@@ -1,8 +1,8 @@
 package yuuine.xxrag.app.ragVectorService;
 
-import yuuine.ragapp.dto.request.InferenceRequest;
-import yuuine.ragapp.dto.request.VectorAddRequest;
-import yuuine.ragapp.dto.request.VectorAddResult;
+import yuuine.xxrag.app.dto.request.InferenceRequest;
+import yuuine.xxrag.app.dto.request.VectorAddRequest;
+import yuuine.xxrag.app.dto.request.VectorAddResult;
 
 import java.util.List;
 

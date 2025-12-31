@@ -4,10 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import yuuine.ragapp.client.IngestionClient;
-import yuuine.ragapp.dto.response.RagIngestResponse;
-import yuuine.ragapp.exception.BusinessException;
-import yuuine.ragapp.ragIngestService.RagIngestService;
+import yuuine.xxrag.app.client.IngestionClient;
+import yuuine.xxrag.app.dto.response.RagIngestResponse;
+import yuuine.xxrag.app.exception.BusinessException;
+import yuuine.xxrag.app.ragIngestService.RagIngestService;
 
 import java.util.List;
 
