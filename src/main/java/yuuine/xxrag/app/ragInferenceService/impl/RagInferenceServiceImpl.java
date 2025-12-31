@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import yuuine.xxrag.app.client.InferenceClient;
 import yuuine.xxrag.app.config.RagPromptProperties;
-import yuuine.xxrag.app.dto.request.InferenceRequest;
+import yuuine.xxrag.app.InferenceRequest;
 import yuuine.xxrag.app.dto.response.InferenceResponse;
 import yuuine.xxrag.app.dto.response.RagInferenceResponse;
 import yuuine.xxrag.app.exception.BusinessException;

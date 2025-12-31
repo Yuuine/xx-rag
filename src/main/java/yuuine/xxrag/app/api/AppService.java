@@ -1,11 +1,13 @@
-package yuuine.xxrag.app.appService;
+package yuuine.xxrag.app.api;
 
+import org.springframework.modulith.NamedInterface;
 import org.springframework.web.multipart.MultipartFile;
-import yuuine.xxrag.app.dto.common.Result;
-import yuuine.xxrag.app.dto.request.InferenceRequest;
+import yuuine.xxrag.Result;
+import yuuine.xxrag.app.InferenceRequest;
 
 import java.util.List;
 
+@NamedInterface("app-api")
 public interface AppService {
 
     /**

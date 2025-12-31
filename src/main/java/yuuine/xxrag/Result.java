@@ -1,4 +1,4 @@
-package yuuine.xxrag.app.dto.common;
+package yuuine.xxrag;
 
 
 import lombok.AllArgsConstructor;

@@ -1,11 +1,11 @@
-package yuuine.xxrag.app.controller;
+package yuuine.xxrag.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import yuuine.xxrag.app.api.AppService;
 import yuuine.xxrag.Result;
+import yuuine.xxrag.app.api.AppService;
 import yuuine.xxrag.app.InferenceRequest;
 
 import java.util.List;
@@ -16,7 +16,7 @@ import java.util.List;
 @Slf4j
 public class AppController {
 
-    private final AppService appService;
+    private final AppService appService;  // 注入暴露接口
 
     @PostMapping("/upload")
     public Result<Object> upload(
@@ -43,5 +43,4 @@ public class AppController {
     ) {
         return appService.search(query);
     }
-
 }

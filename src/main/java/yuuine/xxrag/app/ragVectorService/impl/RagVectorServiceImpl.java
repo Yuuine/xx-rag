@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import yuuine.xxrag.app.client.VectorClient;
-import yuuine.xxrag.app.dto.request.InferenceRequest;
+import yuuine.xxrag.app.InferenceRequest;
 import yuuine.xxrag.app.dto.request.VectorAddRequest;
 import yuuine.xxrag.app.dto.request.VectorAddResult;
 import yuuine.xxrag.app.exception.BusinessException;
