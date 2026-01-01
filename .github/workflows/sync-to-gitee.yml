@@ -22,4 +22,5 @@ jobs:
       - name: Mirror to Gitee
         run: |
           git remote add gitee https://oauth2:${{ secrets.GITEE_TOKEN }}@gitee.com/Yuuine/xx-rag.git
+          
           git push --mirror gitee
