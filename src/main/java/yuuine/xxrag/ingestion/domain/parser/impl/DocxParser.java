@@ -5,8 +5,8 @@ import org.apache.poi.xwpf.usermodel.*;
 import org.springframework.stereotype.Component;
 import yuuine.xxrag.ingestion.domain.models.DocumentProcessingContext;
 import yuuine.xxrag.ingestion.domain.parser.DocumentParser;
-import yuuine.xxrag.ingestion.exception.BusinessException;
-import yuuine.xxrag.ingestion.exception.ErrorCode;
+import yuuine.xxrag.exception.IngestionBusinessException;
+import yuuine.xxrag.exception.ErrorCode;
 
 import java.io.InputStream;
 import java.util.List;
@@ -63,7 +63,7 @@ public class DocxParser implements DocumentParser {
 
         } catch (Exception e) {
             log.error("[DocxParser] Docx 解析失败: name={}, error={}", fileName, e.getMessage());
-            throw new BusinessException(ErrorCode.FILE_PARSE_FAILED, e);
+            throw new IngestionBusinessException(ErrorCode.FILE_PARSE_FAILED, e);
         }
     }
 

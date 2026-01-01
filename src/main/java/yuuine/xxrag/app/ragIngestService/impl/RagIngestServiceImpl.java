@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import yuuine.xxrag.app.exception.BusinessException;
+import yuuine.xxrag.exception.BusinessException;
 import yuuine.xxrag.app.ragIngestService.RagIngestService;
 import yuuine.xxrag.ingestion.api.DocumentIngestionService;
 import yuuine.xxrag.dto.response.IngestResponse;

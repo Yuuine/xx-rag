@@ -3,8 +3,8 @@ package yuuine.xxrag.ingestion.utils;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import yuuine.xxrag.ingestion.exception.BusinessException;
-import yuuine.xxrag.ingestion.exception.ErrorCode;
+import yuuine.xxrag.exception.IngestionBusinessException;
+import yuuine.xxrag.exception.ErrorCode;
 
 import java.io.ByteArrayInputStream;
 import java.util.Locale;
@@ -33,7 +33,7 @@ public final class MimeTypeDetectorUtil {
     public static String detectMimeType(String fileName, byte[] fileBytes) {
 
         if (fileBytes == null || fileBytes.length == 0) {
-            throw new BusinessException(ErrorCode.UNSUPPORTED_FILE_TYPE, "文件内容为空");
+            throw new IngestionBusinessException(ErrorCode.UNSUPPORTED_FILE_TYPE, "文件内容为空");
         }
 
         // 1. 优先基于扩展名推断 MIME 类型
@@ -54,7 +54,7 @@ public final class MimeTypeDetectorUtil {
 
         // 3. 白名单校验
         if (!SUPPORTED_MIME_TYPES.contains(mimeType)) {
-            throw new BusinessException(
+            throw new IngestionBusinessException(
                     ErrorCode.UNSUPPORTED_FILE_TYPE,
                     "不支持的文件类型: " + mimeType + "（文件名: " + fileName + "）"
             );

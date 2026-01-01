@@ -1,7 +1,8 @@
-package yuuine.xxrag.app.exception;
+package yuuine.xxrag.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -9,24 +10,41 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import yuuine.xxrag.dto.common.Result;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * 统一处理控制器层抛出的异常，返回标准的 Result 响应格式
  */
-@RestControllerAdvice(basePackages = "yuuine.ragapp.controller")
+@RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
     /**
-     * 处理业务自定义异常
+     * 处理业务自定义异常 (统一处理)
      */
     @ExceptionHandler(BusinessException.class)
-    @ResponseStatus(HttpStatus.OK)  // 业务异常通常返回 200，便于前端统一处理 Result
+    @ResponseStatus(HttpStatus.OK)  // 业务异常返回 200，便于前端统一处理 Result
     public Result<Object> handleBusinessException(BusinessException e) {
         log.warn("业务异常 [code={}]: {}", e.getCode(), e.getMessage());
         return Result.error(e.getCode(), e.getMessage());
+    }
+
+    /**
+     * 处理ingestion模块的业务异常
+     */
+    @ExceptionHandler(IngestionBusinessException.class)
+    public ResponseEntity<Result<Object>> handleIngestionBusinessException(IngestionBusinessException e, HttpServletRequest request) {
+        log.warn("业务异常: URL={}, method={}, code={}",
+                request.getRequestURI(),
+                request.getMethod(),
+                e.getErrorCode().getCode(),
+                e);
+
+        Result<Object> result = Result.error(e.getErrorCode().getCode(), e.getMessage());
+
+        return ResponseEntity.badRequest().body(result);
     }
 
     /**

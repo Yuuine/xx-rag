@@ -9,7 +9,7 @@ import yuuine.xxrag.dto.request.InferenceRequest;
 import yuuine.xxrag.app.config.RagPromptProperties;
 import yuuine.xxrag.dto.response.InferenceResponse;
 import yuuine.xxrag.app.api.dto.response.RagInferenceResponse;
-import yuuine.xxrag.app.exception.BusinessException;
+import yuuine.xxrag.exception.BusinessException;
 import yuuine.xxrag.app.ragInferenceService.RagInferenceService;
 import yuuine.xxrag.dto.common.VectorSearchResult;
 

@@ -1,10 +1,9 @@
-package yuuine.xxrag.ingestion.exception;
+package yuuine.xxrag.exception;
 
 import lombok.Getter;
 
 @Getter
 public enum ErrorCode {
-
 
     FILE_PARSE_ERROR(1000, "文档解析错误"),
     FILE_PARSE_FAILED(1001, "文档解析失败"),

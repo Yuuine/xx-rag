@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 import yuuine.xxrag.ingestion.domain.models.DocumentProcessingContext;
 import yuuine.xxrag.ingestion.domain.parser.DocumentParser;
-import yuuine.xxrag.ingestion.exception.BusinessException;
-import yuuine.xxrag.ingestion.exception.ErrorCode;
+import yuuine.xxrag.exception.IngestionBusinessException;
+import yuuine.xxrag.exception.ErrorCode;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -48,7 +48,7 @@ public class MarkdownParser implements DocumentParser {
             return text;
         } catch (IOException | TikaException e) {
             log.error("[MarkdownParser] Markdown 解析失败: name={}, error={}", fileName, e.getMessage());
-            throw new BusinessException(ErrorCode.FILE_PARSE_ERROR, e);
+            throw new IngestionBusinessException(ErrorCode.FILE_PARSE_ERROR, e);
         } catch (SAXException e) {
             throw new RuntimeException(e);
         }
