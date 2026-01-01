@@ -1,5 +1,6 @@
-package yuuine.xxrag.app.config;
+package yuuine.xxrag.config;
 
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -11,7 +12,7 @@ public class StartupBanner implements CommandLineRunner {
     private int port;
 
     @Override
-    public void run(String... args) {
+    public void run(@NotNull String... args) {
 
         String baseUrl = "http://localhost:" + port;
 

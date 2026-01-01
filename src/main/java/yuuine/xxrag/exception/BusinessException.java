@@ -1,4 +1,4 @@
-package yuuine.xxrag.app.exception;
+package yuuine.xxrag.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -37,5 +37,4 @@ public class BusinessException extends RuntimeException {
         super(message, cause);
         this.code = 1;
     }
-
 }

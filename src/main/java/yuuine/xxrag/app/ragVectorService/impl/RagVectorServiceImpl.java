@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 import yuuine.xxrag.dto.request.VectorAddRequest;
 import yuuine.xxrag.dto.common.VectorAddResult;
 import yuuine.xxrag.dto.request.VectorSearchRequest;
-import yuuine.xxrag.app.exception.BusinessException;
+import yuuine.xxrag.exception.BusinessException;
 import yuuine.xxrag.app.ragVectorService.RagVectorService;
 import yuuine.xxrag.dto.common.VectorSearchResult;
 import yuuine.xxrag.vector.api.VectorApi;

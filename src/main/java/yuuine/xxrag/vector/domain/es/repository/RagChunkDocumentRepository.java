@@ -1,4 +1,4 @@
-package yuuine.xxrag.vector.domain.es.Repository;
+package yuuine.xxrag.vector.domain.es.repository;
 
 import org.springframework.data.elasticsearch.annotations.Query;
 import org.springframework.data.elasticsearch.core.SearchHit;

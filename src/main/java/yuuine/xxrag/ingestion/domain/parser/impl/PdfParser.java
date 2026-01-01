@@ -9,8 +9,8 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.springframework.stereotype.Component;
 import yuuine.xxrag.ingestion.domain.models.DocumentProcessingContext;
 import yuuine.xxrag.ingestion.domain.parser.DocumentParser;
-import yuuine.xxrag.ingestion.exception.BusinessException;
-import yuuine.xxrag.ingestion.exception.ErrorCode;
+import yuuine.xxrag.exception.IngestionBusinessException;
+import yuuine.xxrag.exception.ErrorCode;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
@@ -52,7 +52,7 @@ public class PdfParser implements DocumentParser {
             return text;
         } catch (Exception e) {
             log.error("[PDFParser] PDF 解析失败: name={}, error={}", fileName, e.getMessage());
-            throw new BusinessException(ErrorCode.FILE_PARSE_ERROR, e);
+            throw new IngestionBusinessException(ErrorCode.FILE_PARSE_ERROR, e);
         }
     }
 }

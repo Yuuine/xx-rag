@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.ingestion.domain.models.DocumentProcessingContext;
-import yuuine.xxrag.ingestion.exception.BusinessException;
-import yuuine.xxrag.ingestion.exception.ErrorCode;
+import yuuine.xxrag.exception.IngestionBusinessException;
+import yuuine.xxrag.exception.ErrorCode;
 import yuuine.xxrag.ingestion.utils.Md5Util;
 import yuuine.xxrag.ingestion.utils.MimeTypeDetectorUtil;
 
@@ -27,7 +27,7 @@ public class ProcessDocument {
         try {
             fileBytes = file.getBytes();
         } catch (IOException e) {
-            throw new BusinessException(ErrorCode.FILE_GET_BYTES_ERROR, e);
+            throw new IngestionBusinessException(ErrorCode.FILE_GET_BYTES_ERROR, e);
         }
 
         //3.计算文件的MD5值，作为文件唯一标识
@@ -51,11 +51,11 @@ public class ProcessDocument {
 
         // 禁止上传空文件
         if (file.isEmpty()) {
-            throw new BusinessException(ErrorCode.FILE_UPLOAD_EMPTY);
+            throw new IngestionBusinessException(ErrorCode.FILE_UPLOAD_EMPTY);
         }
         // 禁止上传文件大小超过 100MB
         if (file.getSize() > 100 * 1024 * 1024) {
-            throw new BusinessException(ErrorCode.FILE_SIZE_TOO_LARGE);
+            throw new IngestionBusinessException(ErrorCode.FILE_SIZE_TOO_LARGE);
         }
     }
 
