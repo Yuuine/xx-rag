@@ -1,5 +1,5 @@
 // src/main/java/yuuine/xxrag/vector/application/VectorServiceImpl.java
-package yuuine.xxrag.vector.applicaiton;
+package yuuine.xxrag.vector.application;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

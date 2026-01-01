@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.stereotype.Service;
 import yuuine.xxrag.vector.config.RetrievalProperties;
-import yuuine.xxrag.vector.domain.es.Repository.RagChunkDocumentRepository;
+import yuuine.xxrag.vector.domain.es.repository.RagChunkDocumentRepository;
 import yuuine.xxrag.vector.domain.es.model.RagChunkDocument;
 import yuuine.xxrag.vector.util.RrfFusion;
 
