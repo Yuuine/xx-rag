@@ -13,9 +13,7 @@ import yuuine.xxrag.exception.BusinessException;
 import yuuine.xxrag.app.ragInferenceService.RagInferenceService;
 import yuuine.xxrag.dto.common.VectorSearchResult;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -30,16 +28,10 @@ public class RagInferenceServiceImpl implements RagInferenceService {
     public RagInferenceResponse inference(VectorSearchRequest appRequest,
                                           List<VectorSearchResult> vectorSearchResults) {
 
-        log.debug("开始判断查询问题类型");
-
         String query = appRequest.getQuery();
 
-        // 判断查询类型：知识查询或闲聊
-        String queryType = determineQueryType(query);
-        log.info("查询类型判断结果: {}，直接调用推理服务", queryType);
-
-        // 如果是闲聊类型，直接将问题发送给API
-        if ("闲聊".equals(queryType)) {
+        // 如果没有向量检索结果，认为是闲聊类型，直接将问题发送给API
+        if (vectorSearchResults == null || vectorSearchResults.isEmpty()) {
             InferenceRequest inferenceReq = buildInferenceRequest(query);
             InferenceResponse inferenceResponse = inferenceService.infer(inferenceReq);
 
@@ -54,14 +46,13 @@ public class RagInferenceServiceImpl implements RagInferenceService {
                     """.formatted(query);
 
             response.setQuery(newQuery);
-            System.out.println(newQuery);
             response.setAnswer(inferenceResponse.getAnswer());
             response.setReferences(List.of()); // 闲聊类型没有引用文档
 
             return response;
         }
 
-        // 如果是知识查询类型，按原有逻辑处理
+        // 如果有向量检索结果，按知识查询逻辑处理
         log.debug("开始推理，查询: {}", appRequest.getQuery());
         log.info("推理请求，查询: {}", appRequest.getQuery());
         log.debug("向量搜索结果数量: {}", vectorSearchResults.size());
@@ -100,36 +91,6 @@ public class RagInferenceServiceImpl implements RagInferenceService {
         } catch (Exception e) {
             log.error("推理服务调用失败，查询: {}", appRequest.getQuery(), e);
             throw new BusinessException("推理服务调用失败: " + e.getMessage(), e);
-        }
-    }
-
-    private String determineQueryType(String query) {
-        // 构建用于意图判断的提示词
-        String intentPrompt = """
-                请判断以下用户输入属于哪一类意图：
-                知识查询：用户希望获取事实、操作步骤、定义、解释等具体信息。
-                闲聊：用户进行问候、情感表达、无明确信息需求的对话。
-                用户输入：%s
-                你只需返回"知识查询"或者"闲聊"，不要返回除了这两个词语以外的任何内容。
-                """.formatted(query);
-
-        InferenceRequest intentRequest = new InferenceRequest();
-        intentRequest.setQuery(intentPrompt);
-
-        try {
-            // 调用推理服务判断意图
-            InferenceResponse intentResponse = inferenceService.infer(intentRequest);
-            String result = intentResponse.getAnswer().trim();
-
-            // 返回判断结果，只返回"知识查询"或"闲聊"
-            if (result.contains("闲聊")) {
-                return "闲聊";
-            } else {
-                return "知识查询";
-            }
-        } catch (Exception e) {
-            log.warn("意图判断失败，将默认按知识查询处理: {}", e.getMessage());
-            return "知识查询"; // 默认按知识查询处理
         }
     }
 
