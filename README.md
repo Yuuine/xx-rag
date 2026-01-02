@@ -149,7 +149,7 @@ chmod +x hot-update.sh
 
 ## 系统架构
 
-Spring multipart 模块化设计
+Spring modulith 模块化设计
 
 1. **文档接入服务 (RagIngestService)**：负责文档上传、解析、分割
 2. **向量服务 (RagVectorService)**：负责向量化处理、存储和检索

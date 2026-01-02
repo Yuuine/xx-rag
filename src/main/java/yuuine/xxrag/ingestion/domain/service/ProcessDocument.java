@@ -3,7 +3,7 @@ package yuuine.xxrag.ingestion.domain.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import yuuine.xxrag.ingestion.domain.models.DocumentProcessingContext;
+import yuuine.xxrag.ingestion.domain.model.DocumentProcessingContext;
 import yuuine.xxrag.exception.IngestionBusinessException;
 import yuuine.xxrag.exception.ErrorCode;
 import yuuine.xxrag.ingestion.utils.Md5Util;

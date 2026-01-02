@@ -3,9 +3,7 @@ package yuuine.xxrag.ingestion.domain.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import yuuine.xxrag.ingestion.domain.models.DocumentProcessingContext;
-import yuuine.xxrag.ingestion.domain.parser.DocumentParser;
-import yuuine.xxrag.ingestion.domain.parser.DocumentParserRegistry;
+import yuuine.xxrag.ingestion.domain.model.DocumentProcessingContext;
 
 /**
  * 查找解析器

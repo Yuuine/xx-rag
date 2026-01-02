@@ -6,8 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.app.api.AppService;
 import yuuine.xxrag.app.docService.DocService;
-import yuuine.xxrag.app.api.dto.response.DocList;
-import yuuine.xxrag.app.api.dto.response.RagInferenceResponse;
+import yuuine.xxrag.app.dto.reponse.DocList;
+import yuuine.xxrag.app.dto.reponse.RagInferenceResponse;
 
 import yuuine.xxrag.app.ragInferenceService.RagInferenceService;
 import yuuine.xxrag.app.ragIngestService.RagIngestService;
