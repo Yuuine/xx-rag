@@ -1,6 +1,6 @@
 # 潇潇 RAG
 
-潇潇 RAG 是一个基于检索增强生成（Retrieval-Augmented Generation）技术的智能问答系统。 是一个基于检索增强生成（Retrieval-Augmented Generation）技术的智能问答系统，能够处理多种格式的文档并提供基于文档内容的智能问答功能。
+潇潇 RAG 是一个基于检索增强生成（Retrieval-Augmented Generation）技术的智能问答系统，能够处理多种格式的文档并提供基于文档内容的智能问答功能。
 
 ## 配置文件
 
