@@ -1,6 +1,7 @@
 package yuuine.xxrag.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.connector.ClientAbortException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -84,6 +85,18 @@ public class GlobalExceptionHandler {
     public Result<Object> handleNullPointerException(NullPointerException e) {
         log.error("空指针异常", e);
         return Result.error(500, "系统内部错误");
+    }
+
+    /**
+     * 处理客户端主动断开连接的异常（如用户取消请求、前端超时等）
+     */
+    @ExceptionHandler(ClientAbortException.class)
+    public ResponseEntity<Void> handleClientAbortException(ClientAbortException e, HttpServletRequest request) {
+        log.debug("客户端中断连接 - URL: {}, Method: {}",
+                request.getRequestURI(),
+                request.getMethod());
+        // 返回空响应，不触发前端错误
+        return ResponseEntity.noContent().build();
     }
 
     /**
