@@ -8,7 +8,7 @@ import yuuine.xxrag.dto.response.IngestResponse;
 import java.util.List;
 
 @NamedInterface("ingestion-api")
-public interface DocumentIngestionService {
+public interface DocumentIngestionApi {
 
     IngestResponse ingest(List<MultipartFile> files);
 }

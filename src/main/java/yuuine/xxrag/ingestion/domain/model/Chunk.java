@@ -1,4 +1,4 @@
-package yuuine.xxrag.ingestion.domain.chunk;
+package yuuine.xxrag.ingestion.domain.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

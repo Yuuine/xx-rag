@@ -1,20 +1,20 @@
-package yuuine.xxrag.ingestion.service.impl;
+package yuuine.xxrag.ingestion.application;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.dto.response.IngestResponse;
-import yuuine.xxrag.ingestion.assembler.ChunkAssembler;
-import yuuine.xxrag.ingestion.domain.models.SingleFileProcessResult;
+import yuuine.xxrag.ingestion.application.assembler.ChunkAssembler;
+import yuuine.xxrag.ingestion.domain.model.SingleFileProcessResult;
 import yuuine.xxrag.ingestion.domain.service.ProcessSingleDocument;
-import yuuine.xxrag.ingestion.api.DocumentIngestionService;
+import yuuine.xxrag.ingestion.api.DocumentIngestionApi;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class DocumentIngestionServiceImpl implements DocumentIngestionService {
+public class DocumentIngestionApiImpl implements DocumentIngestionApi {
 
     private final ProcessSingleDocument processSingleDocument;
     private final ChunkAssembler chunkAssembler;

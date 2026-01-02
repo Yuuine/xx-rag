@@ -1,7 +1,7 @@
-package yuuine.xxrag.ingestion.domain.parser;
+package yuuine.xxrag.ingestion.domain.service;
 
 
-import yuuine.xxrag.ingestion.domain.models.DocumentProcessingContext;
+import yuuine.xxrag.ingestion.domain.model.DocumentProcessingContext;
 
 import java.util.List;
 

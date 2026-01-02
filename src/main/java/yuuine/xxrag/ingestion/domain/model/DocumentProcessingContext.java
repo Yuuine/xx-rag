@@ -1,4 +1,4 @@
-package yuuine.xxrag.ingestion.domain.models;
+package yuuine.xxrag.ingestion.domain.model;
 
 import lombok.Data;
 

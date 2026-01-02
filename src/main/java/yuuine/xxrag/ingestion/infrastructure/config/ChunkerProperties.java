@@ -1,4 +1,4 @@
-package yuuine.xxrag.ingestion.config;
+package yuuine.xxrag.ingestion.infrastructure.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;

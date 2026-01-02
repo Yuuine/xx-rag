@@ -1,9 +1,10 @@
-package yuuine.xxrag.ingestion.domain.chunk;
+package yuuine.xxrag.ingestion.domain.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import yuuine.xxrag.ingestion.domain.chunk.impl.LangChain4jRecursiveTextChunker;
+import yuuine.xxrag.ingestion.infrastructure.chunker.LangChain4jRecursiveTextChunker;
+import yuuine.xxrag.ingestion.domain.model.Chunk;
 
 import java.util.ArrayList;
 import java.util.List;

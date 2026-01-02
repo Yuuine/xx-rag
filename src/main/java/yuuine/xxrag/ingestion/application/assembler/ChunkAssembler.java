@@ -1,9 +1,9 @@
-package yuuine.xxrag.ingestion.assembler;
+package yuuine.xxrag.ingestion.application.assembler;
 
 import org.springframework.stereotype.Component;
 import yuuine.xxrag.dto.response.IngestResponse;
-import yuuine.xxrag.ingestion.domain.chunk.Chunk;
-import yuuine.xxrag.ingestion.domain.models.SingleFileProcessResult;
+import yuuine.xxrag.ingestion.domain.model.Chunk;
+import yuuine.xxrag.ingestion.domain.model.SingleFileProcessResult;
 
 import java.util.ArrayList;
 import java.util.List;

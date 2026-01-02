@@ -1,7 +1,6 @@
-package yuuine.xxrag.ingestion.domain.models;
+package yuuine.xxrag.ingestion.domain.model;
 
 import lombok.Getter;
-import yuuine.xxrag.ingestion.domain.chunk.Chunk;
 
 import java.util.List;
 

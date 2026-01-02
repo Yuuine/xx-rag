@@ -1,4 +1,4 @@
-package yuuine.xxrag.ingestion.dto.response;
+package yuuine.xxrag.ingestion.api.dto.response;
 
 import lombok.Data;
 import yuuine.xxrag.dto.response.IngestResponse;

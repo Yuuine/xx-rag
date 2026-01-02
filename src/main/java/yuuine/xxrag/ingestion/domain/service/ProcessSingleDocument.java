@@ -4,10 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import yuuine.xxrag.ingestion.domain.chunk.Chunk;
-import yuuine.xxrag.ingestion.domain.chunk.ChunkService;
-import yuuine.xxrag.ingestion.domain.models.DocumentProcessingContext;
-import yuuine.xxrag.ingestion.domain.models.SingleFileProcessResult;
+import yuuine.xxrag.ingestion.domain.model.Chunk;
+import yuuine.xxrag.ingestion.domain.model.DocumentProcessingContext;
+import yuuine.xxrag.ingestion.domain.model.SingleFileProcessResult;
 
 import java.util.List;
 

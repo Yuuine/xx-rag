@@ -1,4 +1,4 @@
-package yuuine.xxrag.ingestion.domain.parser;
+package yuuine.xxrag.ingestion.domain.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

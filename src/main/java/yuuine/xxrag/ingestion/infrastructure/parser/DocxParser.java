@@ -1,10 +1,10 @@
-package yuuine.xxrag.ingestion.domain.parser.impl;
+package yuuine.xxrag.ingestion.infrastructure.parser;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.xwpf.usermodel.*;
 import org.springframework.stereotype.Component;
-import yuuine.xxrag.ingestion.domain.models.DocumentProcessingContext;
-import yuuine.xxrag.ingestion.domain.parser.DocumentParser;
+import yuuine.xxrag.ingestion.domain.model.DocumentProcessingContext;
+import yuuine.xxrag.ingestion.domain.service.DocumentParser;
 import yuuine.xxrag.exception.IngestionBusinessException;
 import yuuine.xxrag.exception.ErrorCode;
 

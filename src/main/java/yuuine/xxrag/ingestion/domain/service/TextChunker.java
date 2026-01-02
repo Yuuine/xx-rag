@@ -1,4 +1,6 @@
-package yuuine.xxrag.ingestion.domain.chunk;
+package yuuine.xxrag.ingestion.domain.service;
+
+import yuuine.xxrag.ingestion.domain.model.Chunk;
 
 import java.util.function.Consumer;
 

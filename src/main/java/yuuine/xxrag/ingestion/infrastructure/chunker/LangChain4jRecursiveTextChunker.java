@@ -1,4 +1,4 @@
-package yuuine.xxrag.ingestion.domain.chunk.impl;
+package yuuine.xxrag.ingestion.infrastructure.chunker;
 
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
@@ -6,9 +6,9 @@ import dev.langchain4j.data.segment.TextSegment;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import yuuine.xxrag.ingestion.config.ChunkerProperties;
-import yuuine.xxrag.ingestion.domain.chunk.Chunk;
-import yuuine.xxrag.ingestion.domain.chunk.TextChunker;
+import yuuine.xxrag.ingestion.infrastructure.config.ChunkerProperties;
+import yuuine.xxrag.ingestion.domain.model.Chunk;
+import yuuine.xxrag.ingestion.domain.service.TextChunker;
 import yuuine.xxrag.ingestion.utils.UUIDUtil;
 
 import java.util.List;
