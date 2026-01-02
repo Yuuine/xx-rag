@@ -1,4 +1,4 @@
-package yuuine.xxrag.app.api.dto.response;
+package yuuine.xxrag.app.dto.reponse;
 
 import lombok.Data;
 import yuuine.xxrag.app.docService.entity.RagDocuments;
