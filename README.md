@@ -30,6 +30,7 @@ app:
 ## API 接口
 
 完整 API 说明请参阅：[API 文档](./docs/api.md)
+提供了简单的静态页面，可在项目启动后访问
 
 ## Docker 部署（Linux）
 
