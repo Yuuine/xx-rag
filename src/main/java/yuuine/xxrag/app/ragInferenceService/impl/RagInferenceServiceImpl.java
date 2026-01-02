@@ -27,6 +27,32 @@ public class RagInferenceServiceImpl implements RagInferenceService {
     @Override
     public RagInferenceResponse inference(VectorSearchRequest appRequest,
                                           List<VectorSearchResult> vectorSearchResults) {
+
+        String query = appRequest.getQuery();
+
+        // 如果没有向量检索结果，认为是闲聊类型，直接将问题发送给API
+        if (vectorSearchResults == null || vectorSearchResults.isEmpty()) {
+            InferenceRequest inferenceReq = buildInferenceRequest(query);
+            InferenceResponse inferenceResponse = inferenceService.infer(inferenceReq);
+
+            // 构建闲聊类型的响应
+            RagInferenceResponse response = new RagInferenceResponse();
+
+            String newQuery = """
+                    你是潇潇知识问答助手，需遵守：
+                    1. 仅用简体中文作答。
+                    
+                    我的问题：%s
+                    """.formatted(query);
+
+            response.setQuery(newQuery);
+            response.setAnswer(inferenceResponse.getAnswer());
+            response.setReferences(List.of()); // 闲聊类型没有引用文档
+
+            return response;
+        }
+
+        // 如果有向量检索结果，按知识查询逻辑处理
         log.debug("开始推理，查询: {}", appRequest.getQuery());
         log.info("推理请求，查询: {}", appRequest.getQuery());
         log.debug("向量搜索结果数量: {}", vectorSearchResults.size());
@@ -55,11 +81,11 @@ public class RagInferenceServiceImpl implements RagInferenceService {
             // 调用推理服务 - 直接调用服务方法
             log.info("调用推理服务，查询: {}", appRequest.getQuery());
             InferenceResponse inferenceResponse = inferenceService.infer(inferenceReq);
-            log.info("推理服务调用完成，查询: {}", appRequest.getQuery());
+            log.info("推理服务调用完成，查询问题: {}", appRequest.getQuery());
 
             // 封装返回结果
             RagInferenceResponse result = buildResponse(appRequest, inferenceResponse, vectorSearchResults);
-            log.debug("推理完成，答案长度: {}", result.getAnswer().length());
+            log.info("推理完成");
 
             return result;
         } catch (Exception e) {
@@ -75,9 +101,11 @@ public class RagInferenceServiceImpl implements RagInferenceService {
 
         return vectorSearchResults.stream()
                 .sorted((a, b) -> Float.compare(b.getScore(), a.getScore()))  // 按分数降序
-                .map(result -> "来源：" + result.getSource() +
-                        "（块索引：" + result.getChunkIndex() + "）\n" +
-                        result.getContent())
+                .filter(result -> result.getContent() != null && !result.getContent().trim().isEmpty()) // 过滤掉内容为空的结果
+                .map(result ->
+                        "来源：" + "\n" +
+                                "文档名称：" + result.getSource() + "\n" +
+                                "文档内容：" + "\n" + result.getContent())
                 .collect(Collectors.joining("\n\n"));
     }
 
@@ -92,6 +120,7 @@ public class RagInferenceServiceImpl implements RagInferenceService {
 
     private InferenceRequest buildInferenceRequest(String prompt) {
         InferenceRequest inferenceReq = new InferenceRequest();
+        System.out.println(prompt);
         inferenceReq.setQuery(prompt); // 使用合并后的提示词作为查询
         return inferenceReq;
     }
