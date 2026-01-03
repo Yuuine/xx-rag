@@ -1,4 +1,4 @@
-package yuuine.xxrag.app.docService.entity;
+package yuuine.xxrag.app.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;

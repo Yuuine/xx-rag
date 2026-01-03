@@ -1,15 +1,15 @@
-package yuuine.xxrag.app.docService.impl;
+package yuuine.xxrag.app.application.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import yuuine.xxrag.app.docService.DocService;
-import yuuine.xxrag.app.docService.entity.RagDocuments;
-import yuuine.xxrag.app.docService.repository.DocMapper;
-import yuuine.xxrag.app.dto.reponse.DocList;
+import yuuine.xxrag.app.application.service.DocService;
+import yuuine.xxrag.app.application.service.RagVectorService;
+import yuuine.xxrag.app.domain.model.RagDocuments;
+import yuuine.xxrag.app.domain.repository.DocMapper;
+import yuuine.xxrag.app.application.dto.response.DocList;
 import yuuine.xxrag.exception.BusinessException;
-import yuuine.xxrag.app.ragVectorService.RagVectorService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;

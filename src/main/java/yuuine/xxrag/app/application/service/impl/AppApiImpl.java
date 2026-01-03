@@ -1,17 +1,17 @@
-package yuuine.xxrag.app.appService.impl;
+package yuuine.xxrag.app.application.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import yuuine.xxrag.app.api.AppService;
-import yuuine.xxrag.app.docService.DocService;
-import yuuine.xxrag.app.dto.reponse.DocList;
-import yuuine.xxrag.app.dto.reponse.RagInferenceResponse;
+import yuuine.xxrag.app.api.AppApi;
+import yuuine.xxrag.app.application.service.DocService;
+import yuuine.xxrag.app.application.dto.response.DocList;
+import yuuine.xxrag.app.application.dto.response.RagInferenceResponse;
 
-import yuuine.xxrag.app.ragInferenceService.RagInferenceService;
-import yuuine.xxrag.app.ragIngestService.RagIngestService;
-import yuuine.xxrag.app.ragVectorService.RagVectorService;
+import yuuine.xxrag.app.application.service.RagInferenceService;
+import yuuine.xxrag.app.application.service.RagIngestService;
+import yuuine.xxrag.app.application.service.RagVectorService;
 import yuuine.xxrag.dto.common.Result;
 import yuuine.xxrag.dto.common.VectorAddResult;
 import yuuine.xxrag.dto.common.VectorSearchResult;
@@ -30,7 +30,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Service
 @Slf4j
-public class AppServiceImpl implements AppService {
+public class AppApiImpl implements AppApi {
 
     private final RagIngestService ragIngestService;
     private final RagVectorService ragVectorService;

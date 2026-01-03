@@ -1,7 +1,7 @@
-package yuuine.xxrag.app.dto.reponse;
+package yuuine.xxrag.app.application.dto.response;
 
 import lombok.Data;
-import yuuine.xxrag.app.docService.entity.RagDocuments;
+import yuuine.xxrag.app.domain.model.RagDocuments;
 
 import java.util.List;
 
