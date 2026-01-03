@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.dto.common.Result;
 import yuuine.xxrag.app.api.AppApi;
-import yuuine.xxrag.dto.request.InferenceRequest;
 
 import java.util.List;
 

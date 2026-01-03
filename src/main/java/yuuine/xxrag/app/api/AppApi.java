@@ -3,7 +3,6 @@ package yuuine.xxrag.app.api;
 import org.springframework.modulith.NamedInterface;
 import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.dto.common.Result;
-import yuuine.xxrag.dto.request.InferenceRequest;
 
 import java.util.List;
 

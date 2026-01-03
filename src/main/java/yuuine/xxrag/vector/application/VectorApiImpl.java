@@ -4,7 +4,6 @@ package yuuine.xxrag.vector.application;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import yuuine.xxrag.dto.request.InferenceRequest;
 import yuuine.xxrag.vector.api.VectorApi;
 import yuuine.xxrag.vector.domain.embedding.model.ResponseResult;
 import yuuine.xxrag.vector.domain.embedding.service.EmbeddingService;

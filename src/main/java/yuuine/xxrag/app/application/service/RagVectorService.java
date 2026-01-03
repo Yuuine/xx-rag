@@ -2,7 +2,6 @@ package yuuine.xxrag.app.application.service;
 
 import yuuine.xxrag.dto.common.VectorAddResult;
 import yuuine.xxrag.dto.common.VectorSearchResult;
-import yuuine.xxrag.dto.request.InferenceRequest;
 import yuuine.xxrag.dto.request.VectorAddRequest;
 
 import java.util.List;

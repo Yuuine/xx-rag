@@ -1,7 +1,6 @@
 package yuuine.xxrag.dto.request;
 
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.modulith.NamedInterface;
 
 import java.util.List;

@@ -1,7 +1,6 @@
 package yuuine.xxrag.vector.api;
 
 import org.springframework.modulith.NamedInterface;
-import yuuine.xxrag.dto.request.InferenceRequest;
 import yuuine.xxrag.dto.request.VectorAddRequest;
 import yuuine.xxrag.dto.common.VectorAddResult;
 import yuuine.xxrag.dto.common.VectorSearchResult;

@@ -70,12 +70,12 @@ public class InferenceServiceImpl implements InferenceService {
             );
 
             // 记录JSON格式的请求参数
-            try {
-                String jsonRequest = objectMapper.writeValueAsString(chatRequest);
-                log.debug("DeepSeek JSON 请求参数: {}", jsonRequest);
-            } catch (JsonProcessingException e) {
-                log.error("序列化请求参数失败", e);
-            }
+//            try {
+//                String jsonRequest = objectMapper.writeValueAsString(chatRequest);
+//                log.debug("DeepSeek JSON 请求参数: {}", jsonRequest);
+//            } catch (JsonProcessingException e) {
+//                log.error("序列化请求参数失败", e);
+//            }
             ChatResponse response = webClient.post()
                     .uri("/chat/completions")
                     .bodyValue(chatRequest)
