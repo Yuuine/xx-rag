@@ -1,6 +1,6 @@
-package yuuine.xxrag.app.docService;
+package yuuine.xxrag.app.application.service;
 
-import yuuine.xxrag.app.dto.reponse.DocList;
+import yuuine.xxrag.app.application.dto.response.DocList;
 
 import java.util.List;
 

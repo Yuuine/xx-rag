@@ -1,16 +1,16 @@
-package yuuine.xxrag.app.ragInferenceService.impl;
+package yuuine.xxrag.app.application.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import yuuine.xxrag.app.application.service.RagInferenceService;
 import yuuine.xxrag.dto.request.VectorSearchRequest;
 import yuuine.xxrag.inference.api.InferenceService;
 import yuuine.xxrag.dto.request.InferenceRequest;
 import yuuine.xxrag.app.config.RagPromptProperties;
 import yuuine.xxrag.dto.response.InferenceResponse;
-import yuuine.xxrag.app.dto.reponse.RagInferenceResponse;
+import yuuine.xxrag.app.application.dto.response.RagInferenceResponse;
 import yuuine.xxrag.exception.BusinessException;
-import yuuine.xxrag.app.ragInferenceService.RagInferenceService;
 import yuuine.xxrag.dto.common.VectorSearchResult;
 
 import java.util.List;
@@ -120,7 +120,6 @@ public class RagInferenceServiceImpl implements RagInferenceService {
 
     private InferenceRequest buildInferenceRequest(String prompt) {
         InferenceRequest inferenceReq = new InferenceRequest();
-        System.out.println(prompt);
         inferenceReq.setQuery(prompt); // 使用合并后的提示词作为查询
         return inferenceReq;
     }

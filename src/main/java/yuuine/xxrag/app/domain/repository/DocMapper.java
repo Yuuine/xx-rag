@@ -1,7 +1,7 @@
-package yuuine.xxrag.app.docService.repository;
+package yuuine.xxrag.app.domain.repository;
 
 import org.apache.ibatis.annotations.*;
-import yuuine.xxrag.app.docService.entity.RagDocuments;
+import yuuine.xxrag.app.domain.model.RagDocuments;
 
 import java.time.LocalDateTime;
 import java.util.List;

@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.dto.common.Result;
 import yuuine.xxrag.dto.request.VectorSearchRequest;
-import yuuine.xxrag.app.api.AppService;
+import yuuine.xxrag.app.api.AppApi;
 
 import java.util.List;
 
@@ -16,31 +16,31 @@ import java.util.List;
 @Slf4j
 public class RagController {
 
-    private final AppService appService;  // 注入暴露接口
+    private final AppApi appApi;  // 注入暴露接口
 
     @PostMapping("/upload")
     public Result<Object> upload(
             @RequestParam("files") List<MultipartFile> files
     ) {
-        return appService.uploadFiles(files);
+        return appApi.uploadFiles(files);
     }
 
     @GetMapping("/getDoc")
     public Result<Object> getDoc() {
-        return appService.getDocList();
+        return appApi.getDocList();
     }
 
     @PostMapping("/delete")
     public Result<Object> deleteDocuments(
             @RequestBody List<String> fileMd5s
     ) {
-        return appService.deleteDocuments(fileMd5s);
+        return appApi.deleteDocuments(fileMd5s);
     }
 
     @PostMapping("/search")
     public Result<Object> search(
             @RequestBody VectorSearchRequest query
     ) {
-        return appService.search(query);
+        return appApi.search(query);
     }
 }

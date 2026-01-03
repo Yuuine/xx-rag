@@ -65,7 +65,7 @@ mybatis:
 
 logging:
   level:
-    org.springframework.web.reactive: debug
+    yuuine.xxrag: debug
   file:
     name: ./logs/application.log
   logback:
@@ -74,3 +74,7 @@ logging:
       max-history: 7
       total-size-cap: 1GB
       file-name-pattern: ./logs/application.%d{yyyy-MM-dd}.%i.log
+
+aop:
+  tracing:
+    enabled: false  # 方法调用追踪

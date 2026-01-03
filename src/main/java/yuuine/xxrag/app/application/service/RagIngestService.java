@@ -1,4 +1,4 @@
-package yuuine.xxrag.app.ragIngestService;
+package yuuine.xxrag.app.application.service;
 
 import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.dto.response.IngestResponse;

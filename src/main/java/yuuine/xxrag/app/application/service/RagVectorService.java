@@ -1,4 +1,4 @@
-package yuuine.xxrag.app.ragVectorService;
+package yuuine.xxrag.app.application.service;
 
 import yuuine.xxrag.dto.common.VectorAddResult;
 import yuuine.xxrag.dto.common.VectorSearchResult;

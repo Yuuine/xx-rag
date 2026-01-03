@@ -8,7 +8,7 @@ import yuuine.xxrag.dto.request.VectorSearchRequest;
 import java.util.List;
 
 @NamedInterface("app-api")
-public interface AppService {
+public interface AppApi {
 
     /**
      * 处理文件上传和存储的完整流程

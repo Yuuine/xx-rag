@@ -1,12 +1,12 @@
-package yuuine.xxrag.app.ragIngestService.impl;
+package yuuine.xxrag.app.application.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import yuuine.xxrag.app.application.service.RagIngestService;
 import yuuine.xxrag.exception.BusinessException;
-import yuuine.xxrag.app.ragIngestService.RagIngestService;
 import yuuine.xxrag.ingestion.api.DocumentIngestionApi;
 import yuuine.xxrag.dto.response.IngestResponse;
 

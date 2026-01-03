@@ -1,18 +1,26 @@
 package yuuine.xxrag.aop;
 
-import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.*;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import yuuine.xxrag.aop.tracing.LayerResolver;
 import yuuine.xxrag.aop.tracing.ModuleResolver;
 import yuuine.xxrag.aop.tracing.TraceContext;
 import yuuine.xxrag.aop.tracing.TraceNode;
+import yuuine.xxrag.aop.tracing.config.TracingProperties;
 
 @Aspect
 @Component
-@Slf4j
 public class FlowTraceAspect {
+
+    private static final org.slf4j.Logger traceLogger =
+        org.slf4j.LoggerFactory.getLogger("TRACING_LOGGER");
+
+    @Autowired
+    private TracingProperties tracingProperties;
 
     @Pointcut("""
                 execution(* yuuine.xxrag..*(..))
@@ -24,6 +32,11 @@ public class FlowTraceAspect {
 
     @Around("applicationFlow()")
     public Object trace(ProceedingJoinPoint pjp) throws Throwable {
+
+        // 检查是否启用追踪功能
+        if (!tracingProperties.isEnabled()) {
+            return pjp.proceed();
+        }
 
         Class<?> type = pjp.getSignature().getDeclaringType();
 
@@ -39,7 +52,7 @@ public class FlowTraceAspect {
         try {
             TraceContext.push(node);
 
-            log.info("[TRACE] {}", TraceContext.prettyTrace());
+            traceLogger.info("[TRACE] {}", TraceContext.prettyTrace());
 
             return pjp.proceed();
 
