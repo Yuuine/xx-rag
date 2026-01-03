@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import yuuine.xxrag.app.application.service.RagInferenceService;
-import yuuine.xxrag.dto.request.VectorSearchRequest;
 import yuuine.xxrag.inference.api.InferenceService;
 import yuuine.xxrag.dto.request.InferenceRequest;
 import yuuine.xxrag.app.config.RagPromptProperties;
@@ -25,7 +24,7 @@ public class RagInferenceServiceImpl implements RagInferenceService {
     private final RagPromptProperties ragPromptProperties;
 
     @Override
-    public RagInferenceResponse inference(VectorSearchRequest appRequest,
+    public RagInferenceResponse inference(InferenceRequest appRequest,
                                           List<VectorSearchResult> vectorSearchResults) {
 
         String query = appRequest.getQuery();
@@ -39,10 +38,9 @@ public class RagInferenceServiceImpl implements RagInferenceService {
             RagInferenceResponse response = new RagInferenceResponse();
 
             String newQuery = """
-                    你是潇潇知识问答助手，需遵守：
-                    1. 仅用简体中文作答。
-                    
-                    我的问题：%s
+                    作为潇潇知识助手，你的作用是结合知识库回答用户的问题。
+                    但是现在用户只是想和你普通的聊天。
+                    用户问题：%s
                     """.formatted(query);
 
             response.setQuery(newQuery);
@@ -124,7 +122,7 @@ public class RagInferenceServiceImpl implements RagInferenceService {
         return inferenceReq;
     }
 
-    private RagInferenceResponse buildResponse(VectorSearchRequest appRequest,
+    private RagInferenceResponse buildResponse(InferenceRequest appRequest,
                                                InferenceResponse inferenceResponse,
                                                List<VectorSearchResult> vectorSearchResults) {
         RagInferenceResponse response = new RagInferenceResponse();

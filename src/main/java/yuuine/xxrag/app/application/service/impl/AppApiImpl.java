@@ -16,7 +16,6 @@ import yuuine.xxrag.dto.common.Result;
 import yuuine.xxrag.dto.common.VectorAddResult;
 import yuuine.xxrag.dto.common.VectorSearchResult;
 import yuuine.xxrag.dto.request.VectorAddRequest;
-import yuuine.xxrag.dto.request.VectorSearchRequest;
 import yuuine.xxrag.dto.response.InferenceResponse;
 import yuuine.xxrag.dto.response.IngestResponse;
 import yuuine.xxrag.inference.api.InferenceService;
@@ -96,7 +95,7 @@ public class AppApiImpl implements AppApi {
     }
 
     @Override
-    public Result<Object> search(VectorSearchRequest query) {
+    public Result<Object> search(InferenceRequest query) {
         log.info("收到搜索请求，查询: {}", query.getQuery());
 
         if (query.getQuery() == null || query.getQuery().trim().isEmpty()) {

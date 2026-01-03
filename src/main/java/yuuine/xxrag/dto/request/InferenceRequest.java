@@ -9,5 +9,4 @@ public class InferenceRequest {
 
     private String query;
 
-    private Integer topK = 5;
 }

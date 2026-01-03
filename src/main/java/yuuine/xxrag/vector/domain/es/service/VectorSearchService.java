@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.stereotype.Service;
+import yuuine.xxrag.dto.request.InferenceRequest;
 import yuuine.xxrag.vector.domain.embedding.service.EmbeddingService;
 import yuuine.xxrag.vector.domain.es.model.RagChunkDocument;
-import yuuine.xxrag.dto.request.VectorSearchRequest;
 import yuuine.xxrag.dto.common.VectorSearchResult;
 
 import java.io.IOException;
@@ -22,12 +22,11 @@ public class VectorSearchService {
     private final EmbeddingService embeddingService;
     private final RagRetrievalService ragRetrievalService;
 
-    public List<VectorSearchResult> search(VectorSearchRequest vectorSearchRequest) throws IOException {
+    public List<VectorSearchResult> search(InferenceRequest vectorSearchRequest) throws IOException {
 
         String query = vectorSearchRequest.getQuery();
-        int topK = vectorSearchRequest.getTopK() != null ? vectorSearchRequest.getTopK() : 10;
 
-        log.info("开始执行向量搜索: query={}, topK={}", query, topK);
+        log.info("开始执行向量搜索: query={}", query);
 
         // 1. 生成查询向量
         float[] queryVectorArray = embeddingService.embedQuery(query);

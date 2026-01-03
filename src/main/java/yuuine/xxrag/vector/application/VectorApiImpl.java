@@ -4,6 +4,7 @@ package yuuine.xxrag.vector.application;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import yuuine.xxrag.dto.request.InferenceRequest;
 import yuuine.xxrag.vector.api.VectorApi;
 import yuuine.xxrag.vector.domain.embedding.model.ResponseResult;
 import yuuine.xxrag.vector.domain.embedding.service.EmbeddingService;
@@ -12,7 +13,6 @@ import yuuine.xxrag.vector.domain.es.service.VectorAddService;
 import yuuine.xxrag.vector.domain.es.service.VectorDeleteService;
 import yuuine.xxrag.vector.domain.es.service.VectorSearchService;
 import yuuine.xxrag.dto.request.VectorAddRequest;
-import yuuine.xxrag.dto.request.VectorSearchRequest;
 import yuuine.xxrag.dto.common.VectorAddResult;
 import yuuine.xxrag.dto.common.VectorSearchResult;
 
@@ -46,10 +46,9 @@ public class VectorApiImpl implements VectorApi {
     }
 
     @Override
-    public List<VectorSearchResult> search(VectorSearchRequest request) throws IOException {
-        log.info("接收到向量搜索请求: query='{}', topK={}",
-                request.getQuery() != null ? request.getQuery().substring(0, Math.min(request.getQuery().length(), 50)) + (request.getQuery().length() > 50 ? "..." : "") : null,
-                request.getTopK());
+    public List<VectorSearchResult> search(InferenceRequest request) throws IOException {
+        log.info("接收到向量搜索请求: query='{}'",
+                request.getQuery() != null ? request.getQuery().substring(0, Math.min(request.getQuery().length(), 50)) + (request.getQuery().length() > 50 ? "..." : "") : null);
 
         List<VectorSearchResult> results = vectorSearchService.search(request);
 

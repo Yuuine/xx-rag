@@ -5,8 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.dto.common.Result;
-import yuuine.xxrag.dto.request.VectorSearchRequest;
 import yuuine.xxrag.app.api.AppApi;
+import yuuine.xxrag.dto.request.InferenceRequest;
 
 import java.util.List;
 
@@ -16,7 +16,7 @@ import java.util.List;
 @Slf4j
 public class RagController {
 
-    private final AppApi appApi;  // 注入暴露接口
+    private final AppApi appApi;
 
     @PostMapping("/upload")
     public Result<Object> upload(
@@ -39,7 +39,7 @@ public class RagController {
 
     @PostMapping("/search")
     public Result<Object> search(
-            @RequestBody VectorSearchRequest query
+            @RequestBody InferenceRequest query
     ) {
         return appApi.search(query);
     }
