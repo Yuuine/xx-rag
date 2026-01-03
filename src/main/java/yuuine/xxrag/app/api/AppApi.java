@@ -25,8 +25,8 @@ public interface AppApi {
      */
     Result<Object> deleteDocuments(List<String> fileMd5s);
 
-    /**
+    /**e
      * 搜索并推理
      */
-    Result<Object> search(InferenceRequest query);
+    Result<Object> search(String query);
 }

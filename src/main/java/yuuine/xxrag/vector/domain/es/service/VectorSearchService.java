@@ -22,14 +22,13 @@ public class VectorSearchService {
     private final EmbeddingService embeddingService;
     private final RagRetrievalService ragRetrievalService;
 
-    public List<VectorSearchResult> search(InferenceRequest vectorSearchRequest) throws IOException {
+    public List<VectorSearchResult> search(String vectorSearchRequest) throws IOException {
 
-        String query = vectorSearchRequest.getQuery();
 
-        log.info("开始执行向量搜索: query={}", query);
+        log.info("开始执行向量搜索: query={}", vectorSearchRequest);
 
         // 1. 生成查询向量
-        float[] queryVectorArray = embeddingService.embedQuery(query);
+        float[] queryVectorArray = embeddingService.embedQuery(vectorSearchRequest);
         List<Float> queryVector = new ArrayList<>(queryVectorArray.length);
         for (float v : queryVectorArray) {
             queryVector.add(v);
@@ -38,7 +37,7 @@ public class VectorSearchService {
 
         // 2. 统一检索
         List<SearchHit<RagChunkDocument>> searchHits =
-                ragRetrievalService.search(query, queryVector);
+                ragRetrievalService.search(vectorSearchRequest, queryVector);
 
         log.info("检索完成，返回结果数量: {}", searchHits.size());
 

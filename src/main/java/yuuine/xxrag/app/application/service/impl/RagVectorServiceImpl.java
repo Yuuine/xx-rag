@@ -41,15 +41,13 @@ public class RagVectorServiceImpl implements RagVectorService {
     }
 
     @Override
-    public List<VectorSearchResult> search(InferenceRequest query) {
-        log.debug("开始向量搜索，查询: {}", query.getQuery());
-        log.info("向量搜索请求，查询: {}", query.getQuery());
+    public List<VectorSearchResult> search(String query) {
+        log.debug("开始向量搜索，查询: {}", query);
+        log.info("向量搜索请求，查询: {}", query);
 
         try {
-            InferenceRequest inferenceRequest = new InferenceRequest();
-            inferenceRequest.setQuery(query.getQuery());
 
-            List<VectorSearchResult> vectorSearchResults = vectorApi.search(inferenceRequest);
+            List<VectorSearchResult> vectorSearchResults = vectorApi.search(query);
             if (vectorSearchResults == null) {
                 log.error("Vector服务搜索返回空结果");
                 throw new BusinessException("Vector服务搜索返回空结果");
@@ -58,7 +56,7 @@ public class RagVectorServiceImpl implements RagVectorService {
             log.debug("向量搜索完成，找到 {} 个结果", vectorSearchResults.size());
             return vectorSearchResults;
         } catch (Exception e) {
-            log.error("向量搜索失败，查询: {}", query.getQuery(), e);
+            log.error("向量搜索失败，查询: {}", query, e);
             throw new BusinessException("Vector服务调用失败: " + e.getMessage(), e);
         }
     }

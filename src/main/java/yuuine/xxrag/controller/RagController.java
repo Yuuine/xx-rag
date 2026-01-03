@@ -39,7 +39,7 @@ public class RagController {
 
     @PostMapping("/search")
     public Result<Object> search(
-            @RequestBody InferenceRequest query
+            @RequestBody String query
     ) {
         return appApi.search(query);
     }

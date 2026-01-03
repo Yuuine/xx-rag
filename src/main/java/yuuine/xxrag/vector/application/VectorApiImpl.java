@@ -46,9 +46,9 @@ public class VectorApiImpl implements VectorApi {
     }
 
     @Override
-    public List<VectorSearchResult> search(InferenceRequest request) throws IOException {
+    public List<VectorSearchResult> search(String request) throws IOException {
         log.info("接收到向量搜索请求: query='{}'",
-                request.getQuery() != null ? request.getQuery().substring(0, Math.min(request.getQuery().length(), 50)) + (request.getQuery().length() > 50 ? "..." : "") : null);
+                request != null ? request.substring(0, Math.min(request.length(), 50)) + (request.length() > 50 ? "..." : "") : null);
 
         List<VectorSearchResult> results = vectorSearchService.search(request);
 

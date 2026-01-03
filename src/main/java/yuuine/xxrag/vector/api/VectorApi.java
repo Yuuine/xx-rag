@@ -20,7 +20,7 @@ public interface VectorApi {
     /**
      * 向量搜索（其他模块直接调用）
      */
-    List<VectorSearchResult> search(InferenceRequest request) throws IOException;
+    List<VectorSearchResult> search(String request) throws IOException;
 
     /**
      * 根据文件 MD5 批量删除向量（其他模块直接调用）

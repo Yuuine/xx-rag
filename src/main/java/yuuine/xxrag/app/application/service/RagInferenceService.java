@@ -8,5 +8,5 @@ import java.util.List;
 
 public interface RagInferenceService {
     RagInferenceResponse inference(
-            InferenceRequest query, List<VectorSearchResult> vectorSearchResults);
+            String query, List<VectorSearchResult> vectorSearchResults);
 }

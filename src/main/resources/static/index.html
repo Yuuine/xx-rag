@@ -660,7 +660,7 @@
             fetch('/xx/search', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({query: question, topK: 5})
+                body: question
             })
                 .then(res => res.json())
                 .then(data => {

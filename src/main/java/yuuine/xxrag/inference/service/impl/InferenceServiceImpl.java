@@ -1,7 +1,10 @@
 package yuuine.xxrag.inference.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -16,6 +19,7 @@ import yuuine.xxrag.dto.response.InferenceResponse;
 import yuuine.xxrag.inference.api.InferenceService;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -25,6 +29,7 @@ public class InferenceServiceImpl implements InferenceService {
 
     private final DeepSeekProperties properties;
     private final WebClient webClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     // 通过构造函数注入配置并构建带超时的 WebClient
     public InferenceServiceImpl(DeepSeekProperties properties) {
@@ -45,26 +50,32 @@ public class InferenceServiceImpl implements InferenceService {
 
     @Override
     public InferenceResponse infer(InferenceRequest request) {
-        if (request == null || request.getQuery() == null || request.getQuery().trim().isEmpty()) {
+        if (request == null || request.getMessages() == null || request.getMessages().isEmpty()) {
             throw new IllegalArgumentException("查询内容不能为空");
         }
 
-        String query = request.getQuery().trim();
 
         try {
-            // 构建 DeepSeek 请求（当前仅使用 user 角色，query 已包含完整 prompt）
-            ChatRequest chatRequest = new ChatRequest();
-            chatRequest.setModel(properties.getModel());
-            chatRequest.setTemperature(properties.getTemperature());
-            chatRequest.setMax_tokens(properties.getMaxTokens());
+            // 构建 DeepSeek 请求
+            // 将 InferenceRequest 转换为 ChatRequest
+            List<ChatRequest.Message> messages = new ArrayList<>();
+            for (InferenceRequest.Message message : request.getMessages()) {
+                messages.add(new ChatRequest.Message(message.getRole(), message.getContent()));
+            }
+            ChatRequest chatRequest = getChatRequest(messages);
 
-            ChatRequest.Message userMessage = new ChatRequest.Message();
-            userMessage.setRole("user");
-            userMessage.setContent(query);
-            chatRequest.setMessages(List.of(userMessage));
+            log.debug(
+                    "调用 DeepSeek API，model: {},  temperature: {}, max-tokens: {}, timeout-seconds: {}",
+                    properties.getModel(), properties.getTemperature(), properties.getMaxTokens(), properties.getTimeoutSeconds()
+            );
 
-            log.debug("调用 DeepSeek API，model: {}, prompt length: {} chars", properties.getModel(), query.length());
-
+            // 记录JSON格式的请求参数
+            try {
+                String jsonRequest = objectMapper.writeValueAsString(chatRequest);
+                log.debug("DeepSeek JSON 请求参数: {}", jsonRequest);
+            } catch (JsonProcessingException e) {
+                log.error("序列化请求参数失败", e);
+            }
             ChatResponse response = webClient.post()
                     .uri("/chat/completions")
                     .bodyValue(chatRequest)
@@ -92,8 +103,19 @@ public class InferenceServiceImpl implements InferenceService {
             return inferenceResponse;
 
         } catch (Exception e) {
-            log.error("调用 DeepSeek API 失败，query length: {}", query.length(), e);
+            log.error("调用 DeepSeek API 失败，query length: {}", request.getMessages().size(), e);
             throw new RuntimeException("LLM 推理服务异常: " + e.getMessage(), e);
         }
+    }
+
+    @NotNull
+    private ChatRequest getChatRequest(List<ChatRequest.Message> messages) {
+        ChatRequest chatRequest = new ChatRequest();
+        chatRequest.setModel(properties.getModel());
+        chatRequest.setMessages(messages);
+        chatRequest.setTemperature(properties.getTemperature());
+        chatRequest.setMax_tokens(properties.getMaxTokens());
+
+        return chatRequest;
     }
 }
