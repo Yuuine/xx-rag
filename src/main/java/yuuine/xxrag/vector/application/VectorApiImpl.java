@@ -12,7 +12,6 @@ import yuuine.xxrag.vector.domain.es.service.VectorAddService;
 import yuuine.xxrag.vector.domain.es.service.VectorDeleteService;
 import yuuine.xxrag.vector.domain.es.service.VectorSearchService;
 import yuuine.xxrag.dto.request.VectorAddRequest;
-import yuuine.xxrag.dto.request.VectorSearchRequest;
 import yuuine.xxrag.dto.common.VectorAddResult;
 import yuuine.xxrag.dto.common.VectorSearchResult;
 
@@ -46,10 +45,9 @@ public class VectorApiImpl implements VectorApi {
     }
 
     @Override
-    public List<VectorSearchResult> search(VectorSearchRequest request) throws IOException {
-        log.info("接收到向量搜索请求: query='{}', topK={}",
-                request.getQuery() != null ? request.getQuery().substring(0, Math.min(request.getQuery().length(), 50)) + (request.getQuery().length() > 50 ? "..." : "") : null,
-                request.getTopK());
+    public List<VectorSearchResult> search(String request) throws IOException {
+        log.info("接收到向量搜索请求: query='{}'",
+                request != null ? request.substring(0, Math.min(request.length(), 50)) + (request.length() > 50 ? "..." : "") : null);
 
         List<VectorSearchResult> results = vectorSearchService.search(request);
 

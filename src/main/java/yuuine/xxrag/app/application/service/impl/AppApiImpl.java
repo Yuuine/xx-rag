@@ -16,7 +16,6 @@ import yuuine.xxrag.dto.common.Result;
 import yuuine.xxrag.dto.common.VectorAddResult;
 import yuuine.xxrag.dto.common.VectorSearchResult;
 import yuuine.xxrag.dto.request.VectorAddRequest;
-import yuuine.xxrag.dto.request.VectorSearchRequest;
 import yuuine.xxrag.dto.response.InferenceResponse;
 import yuuine.xxrag.dto.response.IngestResponse;
 import yuuine.xxrag.inference.api.InferenceService;
@@ -96,16 +95,17 @@ public class AppApiImpl implements AppApi {
     }
 
     @Override
-    public Result<Object> search(VectorSearchRequest query) {
-        log.info("收到搜索请求，查询: {}", query.getQuery());
+    public Result<Object> search(String query) {
 
-        if (query.getQuery() == null || query.getQuery().trim().isEmpty()) {
+        log.info("收到搜索请求，查询: {}", query);
+
+        if (query == null || query.trim().isEmpty()) {
             return Result.error("查询内容不能为空");
         }
 
         // 先判断查询类型，如果是闲聊则跳过向量检索
         log.debug("开始处理查询问题");
-        String queryType = determineQueryType(query.getQuery());
+        String queryType = determineQueryType(query);
         
         List<VectorSearchResult> vectorSearchResults;
         if ("闲聊".equals(queryType)) {
@@ -128,14 +128,17 @@ public class AppApiImpl implements AppApi {
                 请判断以下用户输入属于哪一类意图：
                 知识查询：用户希望获取事实、操作步骤、定义、解释等具体信息。
                 闲聊：用户进行问候、情感表达、无明确信息需求的对话。
-                用户输入：%s
                 你只需返回"闲聊"或者"知识查询"，不要返回除了这两个词语以外的任何内容。
-                """.formatted(query);
-
-        InferenceRequest intentRequest = new InferenceRequest();
-        intentRequest.setQuery(intentPrompt);
+                """;
 
         try {
+
+            InferenceRequest intentRequest = new InferenceRequest();
+            intentRequest.setMessages(List.of(
+                    new InferenceRequest.Message("system", intentPrompt),
+                    new InferenceRequest.Message("user", query)
+            ));
+
             // 调用推理服务判断意图
             InferenceResponse intentResponse = inferenceService.infer(intentRequest);
             String result = intentResponse.getAnswer().trim();

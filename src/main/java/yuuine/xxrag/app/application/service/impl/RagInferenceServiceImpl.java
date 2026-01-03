@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import yuuine.xxrag.app.application.service.RagInferenceService;
-import yuuine.xxrag.dto.request.VectorSearchRequest;
 import yuuine.xxrag.inference.api.InferenceService;
 import yuuine.xxrag.dto.request.InferenceRequest;
 import yuuine.xxrag.app.config.RagPromptProperties;
@@ -13,6 +12,7 @@ import yuuine.xxrag.app.application.dto.response.RagInferenceResponse;
 import yuuine.xxrag.exception.BusinessException;
 import yuuine.xxrag.dto.common.VectorSearchResult;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,27 +25,18 @@ public class RagInferenceServiceImpl implements RagInferenceService {
     private final RagPromptProperties ragPromptProperties;
 
     @Override
-    public RagInferenceResponse inference(VectorSearchRequest appRequest,
+    public RagInferenceResponse inference(String userQuery,
                                           List<VectorSearchResult> vectorSearchResults) {
-
-        String query = appRequest.getQuery();
 
         // 如果没有向量检索结果，认为是闲聊类型，直接将问题发送给API
         if (vectorSearchResults == null || vectorSearchResults.isEmpty()) {
-            InferenceRequest inferenceReq = buildInferenceRequest(query);
+            InferenceRequest inferenceReq = buildInferenceRequest(userQuery, ragPromptProperties.getOrdinarySystemPrompt());
             InferenceResponse inferenceResponse = inferenceService.infer(inferenceReq);
 
             // 构建闲聊类型的响应
             RagInferenceResponse response = new RagInferenceResponse();
 
-            String newQuery = """
-                    你是潇潇知识问答助手，需遵守：
-                    1. 仅用简体中文作答。
-                    
-                    我的问题：%s
-                    """.formatted(query);
-
-            response.setQuery(newQuery);
+            response.setQuery(userQuery);
             response.setAnswer(inferenceResponse.getAnswer());
             response.setReferences(List.of()); // 闲聊类型没有引用文档
 
@@ -53,8 +44,8 @@ public class RagInferenceServiceImpl implements RagInferenceService {
         }
 
         // 如果有向量检索结果，按知识查询逻辑处理
-        log.debug("开始推理，查询: {}", appRequest.getQuery());
-        log.info("推理请求，查询: {}", appRequest.getQuery());
+        log.debug("开始推理，查询: {}", userQuery);
+        log.info("推理请求，查询: {}", userQuery);
         log.debug("向量搜索结果数量: {}", vectorSearchResults.size());
 
         try {
@@ -62,34 +53,29 @@ public class RagInferenceServiceImpl implements RagInferenceService {
             String context = buildContext(vectorSearchResults);
             log.debug("上下文构建完成，长度: {}", context.length());
 
-            // 从配置中获取系统提示词
-            String systemPrompt = ragPromptProperties.getSystemPrompt();
+            String systemPrompt = ragPromptProperties.getKnowledgeSystemPrompt();
             log.debug("系统提示词长度: {}", systemPrompt.length());
 
             // 构建用户提示词
-            String userPrompt = buildUserPrompt(context, appRequest.getQuery());
+            String userPrompt = buildUserPrompt(context, userQuery);
             log.debug("用户提示词长度: {}", userPrompt.length());
 
-            // 组合最终提示词 - 将系统提示词和用户提示词合并
-            String combinedPrompt = systemPrompt + "\n\n" + userPrompt;
-            log.debug("组合提示词长度: {}", combinedPrompt.length());
-
             // 构造发送给推理服务的请求 - 使用合并后的提示词
-            InferenceRequest inferenceReq = buildInferenceRequest(combinedPrompt);
+            InferenceRequest inferenceReq = buildInferenceRequest(userPrompt, ragPromptProperties.getKnowledgeSystemPrompt());
             log.debug("推理请求构建完成");
 
             // 调用推理服务 - 直接调用服务方法
-            log.info("调用推理服务，查询: {}", appRequest.getQuery());
+            log.info("调用推理服务，查询: {}", userQuery);
             InferenceResponse inferenceResponse = inferenceService.infer(inferenceReq);
-            log.info("推理服务调用完成，查询问题: {}", appRequest.getQuery());
+            log.info("推理服务调用完成，查询问题: {}", userQuery);
 
             // 封装返回结果
-            RagInferenceResponse result = buildResponse(appRequest, inferenceResponse, vectorSearchResults);
+            RagInferenceResponse result = buildResponse(userQuery, inferenceResponse, vectorSearchResults);
             log.info("推理完成");
 
             return result;
         } catch (Exception e) {
-            log.error("推理服务调用失败，查询: {}", appRequest.getQuery(), e);
+            log.error("推理服务调用失败，查询: {}", userQuery, e);
             throw new BusinessException("推理服务调用失败: " + e.getMessage(), e);
         }
     }
@@ -118,18 +104,23 @@ public class RagInferenceServiceImpl implements RagInferenceService {
                 """.formatted(context.isEmpty() ? "（无相关文档）" : context, query);
     }
 
-    private InferenceRequest buildInferenceRequest(String prompt) {
+    private InferenceRequest buildInferenceRequest(String userMessage, String systemPrompt) {
         InferenceRequest inferenceReq = new InferenceRequest();
-        inferenceReq.setQuery(prompt); // 使用合并后的提示词作为查询
+        List<InferenceRequest.Message> messages = new ArrayList<>();
+        messages.add(new InferenceRequest.Message("system", systemPrompt));
+        messages.add(new InferenceRequest.Message("user", userMessage));
+
+        inferenceReq.setMessages(messages);
         return inferenceReq;
     }
 
-    private RagInferenceResponse buildResponse(VectorSearchRequest appRequest,
+    private RagInferenceResponse buildResponse(String userQuery,
                                                InferenceResponse inferenceResponse,
                                                List<VectorSearchResult> vectorSearchResults) {
         RagInferenceResponse response = new RagInferenceResponse();
-        response.setQuery(appRequest.getQuery());
+
         response.setAnswer(inferenceResponse.getAnswer());
+        response.setQuery(userQuery);
 
         // 构建引用信息
         List<RagInferenceResponse.Reference> references = buildReferences(vectorSearchResults);

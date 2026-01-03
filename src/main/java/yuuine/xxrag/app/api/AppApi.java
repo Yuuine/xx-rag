@@ -3,7 +3,6 @@ package yuuine.xxrag.app.api;
 import org.springframework.modulith.NamedInterface;
 import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.dto.common.Result;
-import yuuine.xxrag.dto.request.VectorSearchRequest;
 
 import java.util.List;
 
@@ -25,8 +24,8 @@ public interface AppApi {
      */
     Result<Object> deleteDocuments(List<String> fileMd5s);
 
-    /**
+    /**e
      * 搜索并推理
      */
-    Result<Object> search(VectorSearchRequest query);
+    Result<Object> search(String query);
 }
