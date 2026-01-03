@@ -9,7 +9,8 @@
 ```yaml
 rag:
   prompt:
-    system-prompt:                # 自定义提示词
+    knowledge-system-prompt:      # 自定义提示词
+    ordinary-system-prompt:       # 自定义提示词
 
 app:
   rag:
