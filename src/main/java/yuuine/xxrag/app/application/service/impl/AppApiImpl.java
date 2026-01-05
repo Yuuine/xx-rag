@@ -19,7 +19,6 @@ import yuuine.xxrag.dto.common.VectorSearchResult;
 import yuuine.xxrag.dto.request.VectorAddRequest;
 import yuuine.xxrag.dto.response.InferenceResponse;
 import yuuine.xxrag.dto.response.IngestResponse;
-import yuuine.xxrag.exception.BusinessException;
 import yuuine.xxrag.inference.api.InferenceService;
 import yuuine.xxrag.dto.request.InferenceRequest;
 
