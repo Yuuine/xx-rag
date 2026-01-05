@@ -8,6 +8,7 @@ import yuuine.xxrag.dto.common.Result;
 import yuuine.xxrag.app.api.AppApi;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RequiredArgsConstructor
 @RestController
@@ -37,9 +38,9 @@ public class RagController {
     }
 
     @PostMapping("/search")
-    public Result<Object> search(
+    public CompletableFuture<Result<Object>> search(
             @RequestBody String query
     ) {
-        return appApi.search(query);
+        return appApi.asyncSearch(query);
     }
 }
