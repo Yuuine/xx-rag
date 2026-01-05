@@ -2,6 +2,7 @@ package yuuine.xxrag.app.application.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.app.api.AppApi;
@@ -25,6 +26,7 @@ import yuuine.xxrag.dto.request.InferenceRequest;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 @RequiredArgsConstructor
 @Service
@@ -97,31 +99,48 @@ public class AppApiImpl implements AppApi {
     @Override
     public Result<Object> search(String query) {
 
+        return performSearch(query);
+
+    }
+
+    // 异步搜索，释放 tomcat 线程资源
+    @Override
+    @Async("inferenceTaskExecutor")
+    public CompletableFuture<Result<Object>> asyncSearch(String query) {
+
+        return CompletableFuture.completedFuture(performSearch(query));
+
+    }
+
+    // 提取搜索逻辑到私有方法，供同步和异步方法共同使用
+    private Result<Object> performSearch(String query) {
+
         log.info("收到搜索请求，查询: {}", query);
 
-        if (query == null || query.trim().isEmpty()) {
-            return Result.error("查询内容不能为空");
-        }
+        try {
+            // 先判断查询类型，如果是闲聊则跳过向量检索
+            log.debug("开始处理查询问题");
+            String queryType = determineQueryType(query);
 
-        // 先判断查询类型，如果是闲聊则跳过向量检索
-        log.debug("开始处理查询问题");
-        String queryType = determineQueryType(query);
-        
-        List<VectorSearchResult> vectorSearchResults;
-        if ("闲聊".equals(queryType)) {
-            // 闲聊类型不需要向量检索
-            log.info("查询类型判断结果: {}，直接调用推理服务", queryType);
-            vectorSearchResults = List.of();
-        } else {
-            // 知识查询需要向量检索
-            log.info("查询类型判断结果: {}，开始向量检索", queryType);
-            vectorSearchResults = ragVectorService.search(query);
-        }
+            List<VectorSearchResult> vectorSearchResults;
+            if ("闲聊".equals(queryType)) {
+                // 闲聊类型不需要向量检索
+                log.info("查询类型判断结果: {}，直接调用推理服务", queryType);
+                vectorSearchResults = List.of();
+            } else {
+                // 知识查询需要向量检索
+                log.info("查询类型判断结果: {}，开始向量检索", queryType);
+                vectorSearchResults = ragVectorService.search(query);
+            }
 
-        RagInferenceResponse ragInferenceResponse = ragInferenceService.inference(query, vectorSearchResults);
-        return Result.success(ragInferenceResponse);
+            RagInferenceResponse ragInferenceResponse = ragInferenceService.inference(query, vectorSearchResults);
+            return Result.success(ragInferenceResponse);
+        } catch (Exception e) {
+            log.error("搜索处理失败", e);
+            return Result.error("搜索处理失败: " + e.getMessage());
+        }
     }
-    
+
     private String determineQueryType(String query) {
         // 构建用于意图判断的提示词
         String intentPrompt = """

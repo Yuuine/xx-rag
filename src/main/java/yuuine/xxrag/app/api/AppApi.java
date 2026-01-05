@@ -5,6 +5,7 @@ import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.dto.common.Result;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @NamedInterface("app-api")
 public interface AppApi {
@@ -28,4 +29,8 @@ public interface AppApi {
      * 搜索并推理
      */
     Result<Object> search(String query);
+
+
+    // 异步方法
+    CompletableFuture<Result<Object>> asyncSearch(String query);
 }
