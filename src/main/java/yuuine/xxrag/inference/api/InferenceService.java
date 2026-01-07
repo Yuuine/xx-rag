@@ -2,6 +2,7 @@ package yuuine.xxrag.inference.api;
 
 
 import org.springframework.modulith.NamedInterface;
+import reactor.core.publisher.Flux;
 import yuuine.xxrag.dto.request.InferenceRequest;
 import yuuine.xxrag.dto.response.InferenceResponse;
 
@@ -9,5 +10,7 @@ import yuuine.xxrag.dto.response.InferenceResponse;
 public interface InferenceService {
 
     InferenceResponse infer(InferenceRequest request);
+
+    Flux<String> inferStream(InferenceRequest request);
 
 }
