@@ -4,7 +4,7 @@ package yuuine.xxrag.vector.domain.es.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import yuuine.xxrag.vector.domain.es.Repository.RagChunkDocumentRepository;
+import yuuine.xxrag.vector.domain.es.repository.RagChunkDocumentRepository;
 
 import java.util.List;
 

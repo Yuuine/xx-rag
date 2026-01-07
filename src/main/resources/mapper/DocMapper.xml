@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="yuuine.xxrag.app.domain.repository.DocMapper">
+
+    <!-- 批量删除文档（根据 file_md5） -->
+    <delete id="batchDeleteByFileMd5">
+        DELETE FROM rag_documents
+        WHERE file_md5 IN
+        <foreach collection="list" item="md5" open="(" separator="," close=")">
+            #{md5}
+        </foreach>
+    </delete>
+
+</mapper>

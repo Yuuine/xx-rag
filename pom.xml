@@ -49,6 +49,11 @@
             <artifactId>spring-modulith-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+            <version>4.0.0-M1</version>
+        </dependency>
         <!-- App dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -140,9 +145,9 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>com.theokanning.openai-gpt3-java</groupId>
-            <artifactId>service</artifactId>
-            <version>0.18.2</version>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>3.0.3</version>
         </dependency>
     </dependencies>
     <dependencyManagement>
@@ -158,6 +163,7 @@
     </dependencyManagement>
 
     <build>
+        <finalName>xx-rag-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -8,7 +8,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "rag.prompt")
 public class RagPromptProperties {
-    private String systemPrompt = """
+    private String KnowledgeSystemPrompt = """
+            
+            """;
+    private String ordinarySystemPrompt = """
             
             """;
 }
