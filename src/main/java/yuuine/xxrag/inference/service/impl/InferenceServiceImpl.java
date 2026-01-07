@@ -1,7 +1,5 @@
 package yuuine.xxrag.inference.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -29,7 +27,6 @@ public class InferenceServiceImpl implements InferenceService {
 
     private final DeepSeekProperties properties;
     private final WebClient webClient;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     // 通过构造函数注入配置并构建带超时的 WebClient
     public InferenceServiceImpl(DeepSeekProperties properties) {
@@ -69,13 +66,6 @@ public class InferenceServiceImpl implements InferenceService {
                     properties.getModel(), properties.getTemperature(), properties.getMaxTokens(), properties.getTimeoutSeconds()
             );
 
-            // 记录JSON格式的请求参数
-//            try {
-//                String jsonRequest = objectMapper.writeValueAsString(chatRequest);
-//                log.debug("DeepSeek JSON 请求参数: {}", jsonRequest);
-//            } catch (JsonProcessingException e) {
-//                log.error("序列化请求参数失败", e);
-//            }
             ChatResponse response = webClient.post()
                     .uri("/chat/completions")
                     .bodyValue(chatRequest)
