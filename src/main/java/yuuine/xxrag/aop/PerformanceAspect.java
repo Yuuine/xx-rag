@@ -15,8 +15,7 @@ public class PerformanceAspect {
 
     @Around("execution(* yuuine.xxrag.app.application.service..*(..)) || " +
             "execution(* yuuine.xxrag.ingestion.domain.service..*(..)) || " +
-            "execution(* yuuine.xxrag.vector.domain.embedding.service..*(..)) || " +
-            "execution(* yuuine.xxrag.app.application.service.impl.RagInferenceServiceImpl.*(..))")
+            "execution(* yuuine.xxrag.vector.domain.embedding.service..*(..))")
     public Object monitor(ProceedingJoinPoint joinPoint) throws Throwable {
 
         String className = joinPoint.getTarget().getClass().getSimpleName();

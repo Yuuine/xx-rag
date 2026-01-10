@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import yuuine.xxrag.app.application.service.DocService;
-import yuuine.xxrag.app.application.service.RagVectorService;
+import yuuine.xxrag.app.application.service.impl.DocumentDeletionService;
 import yuuine.xxrag.app.domain.model.RagDocuments;
 import yuuine.xxrag.app.domain.repository.DocMapper;
 import yuuine.xxrag.app.application.dto.response.DocList;
@@ -21,7 +21,7 @@ import java.util.List;
 public class DocServiceImpl implements DocService {
 
     private final DocMapper docMapper;
-    private final RagVectorService ragVectorService;
+    private final DocumentDeletionService documentDeletionService;
 
     @Override
     public void saveDoc(String fileMd5, String fileName) {
@@ -54,20 +54,7 @@ public class DocServiceImpl implements DocService {
     @Override
     @Transactional
     public void deleteDocuments(List<String> fileMd5s) {
-        log.info("开始批量删除文档，数量: {}", fileMd5s.size());
-
-        // 删除向量库
-        try {
-            ragVectorService.deleteChunksByFileMd5s(fileMd5s);
-            log.info("向量库 chunks 删除完成");
-        } catch (Exception e) {
-            log.error("向量库删除失败，放弃数据库删除操作", e);
-            throw new BusinessException("向量库删除失败，无法继续删除文档", e);
-        }
-
-        // 删除 MySQL（可回滚）
-        int deletedCount = docMapper.batchDeleteByFileMd5(fileMd5s);
-        log.info("MySQL 删除文档 {} 条", deletedCount);
+        documentDeletionService.deleteDocuments(fileMd5s);
     }
 
 }

@@ -37,10 +37,5 @@ public class RagController {
         return appApi.deleteDocuments(fileMd5s);
     }
 
-    @PostMapping("/search")
-    public CompletableFuture<Result<Object>> search(
-            @RequestBody String query
-    ) {
-        return appApi.asyncSearch(query);
-    }
+
 }
