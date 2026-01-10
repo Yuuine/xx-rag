@@ -116,8 +116,6 @@ public class InferenceServiceImpl implements InferenceService {
                 .toList();
         ChatRequest chatRequest = getChatRequest(messages, true);
 
-        System.out.println(chatRequest);
-
         log.debug("调用 DeepSeek 流式 API，model: {}", properties.getModel());
 
         return webClient.post()

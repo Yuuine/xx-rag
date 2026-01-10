@@ -146,18 +146,18 @@ chmod +x hot-update.sh
 - **文档解析**：Apache Tika, Apache POI, Apache PDFBox
 - **AI/LLM**：LangChain4j, DeepSeek API, DashScope SDK
 - **ORM**：MyBatis
-- **微服务通信**：Spring Cloud OpenFeign
-- **异步处理**：Spring WebFlux
+- **流式处理**：Spring WebFlux
+- **全双工通信**：WebSocket
 
 ## 系统架构
 
 Spring modulith 模块化设计
 
-1. **文档接入服务 (RagIngestService)**：负责文档上传、解析、分割
-2. **向量服务 (RagVectorService)**：负责向量化处理、存储和检索
-3. **推理服务 (RagInferenceService)**：负责与 LLM 交互，生成回答
-4. **文档管理服务 (DocService)**：负责文档元数据管理
-5. **应用服务 (AppService)**：协调各组件，提供统一 API
+1. **文档接入服务**：负责文档上传、解析、分割
+2. **向量服务**：负责向量化处理、存储和检索
+3. **推理服务**：负责与 LLM 交互，生成回答
+4. **文档管理服务**：负责文档元数据管理
+5. **应用服务**：协调各组件，提供统一 API
 
 ## 环境要求
 
