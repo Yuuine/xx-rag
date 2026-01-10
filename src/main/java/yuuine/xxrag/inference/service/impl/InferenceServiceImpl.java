@@ -63,7 +63,7 @@ public class InferenceServiceImpl implements InferenceService {
             for (InferenceRequest.Message message : request.getMessages()) {
                 messages.add(new ChatRequest.Message(message.getRole(), message.getContent()));
             }
-            ChatRequest chatRequest = getChatRequest(messages);
+            ChatRequest chatRequest = getChatRequest(messages,false);
 
             log.debug(
                     "调用 DeepSeek API，model: {},  temperature: {}, max-tokens: {}, timeout-seconds: {}",
@@ -112,8 +112,7 @@ public class InferenceServiceImpl implements InferenceService {
         List<ChatRequest.Message> messages = request.getMessages().stream()
                 .map(m -> new ChatRequest.Message(m.getRole(), m.getContent()))
                 .toList();
-        ChatRequest chatRequest = getChatRequest(messages);
-        chatRequest.setStream(true);  // 强制启用流式
+        ChatRequest chatRequest = getChatRequest(messages, true);
 
         log.debug("调用 DeepSeek 流式 API，model: {}", properties.getModel());
 
@@ -125,12 +124,12 @@ public class InferenceServiceImpl implements InferenceService {
                 .filter(line -> line.startsWith("data: "))  // 过滤有效行
                 .map(line -> line.substring("data: ".length()).trim())  // 提取 JSON
                 .filter(json -> !"[DONE]".equals(json))  // 排除结束标志
-                .map(json -> {
+                .<ApiChatChunk>handle((json, sink) -> {
                     try {
-                        return objectMapper.readValue(json, ApiChatChunk.class);
+                        sink.next(objectMapper.readValue(json, ApiChatChunk.class));
                     } catch (Exception e) {
                         log.warn("解析 ApiChatChunk 失败: {}", json, e);
-                        throw new RuntimeException("Chunk 解析异常", e);
+                        sink.error(new RuntimeException("Chunk 解析异常", e));
                     }
                 })
                 .onErrorResume(error -> {
@@ -140,11 +139,11 @@ public class InferenceServiceImpl implements InferenceService {
     }
 
     @NotNull
-    private ChatRequest getChatRequest(List<ChatRequest.Message> messages) {
+    private ChatRequest getChatRequest(List<ChatRequest.Message> messages, boolean stream) {
         ChatRequest chatRequest = new ChatRequest();
         chatRequest.setModel(properties.getModel());
         chatRequest.setMessages(messages);
-        chatRequest.setStream(properties.isStream());
+        chatRequest.setStream(stream);
         chatRequest.setTemperature(properties.getTemperature());
         chatRequest.setMax_tokens(properties.getMaxTokens());
 
