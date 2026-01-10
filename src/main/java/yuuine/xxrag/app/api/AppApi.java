@@ -33,4 +33,7 @@ public interface AppApi {
 
     // 异步方法
     CompletableFuture<Result<Object>> asyncSearch(String query);
+
+
+    void streamSearch(String query, String userDestination);
 }

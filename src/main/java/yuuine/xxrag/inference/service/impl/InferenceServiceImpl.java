@@ -8,7 +8,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
 import reactor.netty.http.client.HttpClient;
+import tools.jackson.databind.ObjectMapper;
+import yuuine.xxrag.dto.common.ApiChatChunk;
 import yuuine.xxrag.inference.config.DeepSeekProperties;
 import yuuine.xxrag.inference.dto.request.ChatRequest;
 import yuuine.xxrag.dto.request.InferenceRequest;
@@ -27,6 +30,7 @@ public class InferenceServiceImpl implements InferenceService {
 
     private final DeepSeekProperties properties;
     private final WebClient webClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     // 通过构造函数注入配置并构建带超时的 WebClient
     public InferenceServiceImpl(DeepSeekProperties properties) {
@@ -98,11 +102,49 @@ public class InferenceServiceImpl implements InferenceService {
         }
     }
 
+    @Override
+    public Flux<ApiChatChunk> streamInfer(InferenceRequest request) {
+        if (request == null || request.getMessages() == null || request.getMessages().isEmpty()) {
+            return Flux.error(new IllegalArgumentException("查询内容不能为空"));
+        }
+
+        // 构建请求（启用 stream）
+        List<ChatRequest.Message> messages = request.getMessages().stream()
+                .map(m -> new ChatRequest.Message(m.getRole(), m.getContent()))
+                .toList();
+        ChatRequest chatRequest = getChatRequest(messages);
+        chatRequest.setStream(true);  // 强制启用流式
+
+        log.debug("调用 DeepSeek 流式 API，model: {}", properties.getModel());
+
+        return webClient.post()
+                .uri("/chat/completions")
+                .bodyValue(chatRequest)
+                .retrieve()
+                .bodyToFlux(String.class)  // 获取原始 SSE 行
+                .filter(line -> line.startsWith("data: "))  // 过滤有效行
+                .map(line -> line.substring("data: ".length()).trim())  // 提取 JSON
+                .filter(json -> !"[DONE]".equals(json))  // 排除结束标志
+                .map(json -> {
+                    try {
+                        return objectMapper.readValue(json, ApiChatChunk.class);
+                    } catch (Exception e) {
+                        log.warn("解析 ApiChatChunk 失败: {}", json, e);
+                        throw new RuntimeException("Chunk 解析异常", e);
+                    }
+                })
+                .onErrorResume(error -> {
+                    log.error("DeepSeek 流式 API 调用失败", error);
+                    return Flux.error(new RuntimeException("LLM 流式推理异常: " + error.getMessage()));
+                });
+    }
+
     @NotNull
     private ChatRequest getChatRequest(List<ChatRequest.Message> messages) {
         ChatRequest chatRequest = new ChatRequest();
         chatRequest.setModel(properties.getModel());
         chatRequest.setMessages(messages);
+        chatRequest.setStream(properties.isStream());
         chatRequest.setTemperature(properties.getTemperature());
         chatRequest.setMax_tokens(properties.getMaxTokens());
 
