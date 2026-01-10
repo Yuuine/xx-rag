@@ -82,4 +82,4 @@ logging:
 
 aop:
   FlowTrace-enabled: false      # 调用方法跟踪
-  Performance-enabled: true    # 方法性能监控
+  Performance-enabled: true     # 方法性能监控
