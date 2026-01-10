@@ -2,7 +2,6 @@ package yuuine.xxrag.app.application.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -11,7 +10,6 @@ import yuuine.xxrag.app.api.AppApi;
 import yuuine.xxrag.app.application.service.DocService;
 import yuuine.xxrag.app.application.dto.response.DocList;
 import yuuine.xxrag.app.application.dto.response.RagInferenceResponse;
-
 import yuuine.xxrag.app.application.service.RagInferenceService;
 import yuuine.xxrag.app.application.service.RagIngestService;
 import yuuine.xxrag.app.application.service.RagVectorService;
@@ -25,7 +23,7 @@ import yuuine.xxrag.dto.response.IngestResponse;
 import yuuine.xxrag.dto.response.StreamResponse;
 import yuuine.xxrag.inference.api.InferenceService;
 import yuuine.xxrag.dto.request.InferenceRequest;
-
+import yuuine.xxrag.websocket.RagWebSocketHandler;
 
 import java.util.HashSet;
 import java.util.List;
@@ -42,7 +40,6 @@ public class AppApiImpl implements AppApi {
     private final RagInferenceService ragInferenceService;
     private final DocService docService;
     private final InferenceService inferenceService;
-    private final SimpMessagingTemplate messagingTemplate;
 
     @Override
     public Result<Object> uploadFiles(List<MultipartFile> files) {
@@ -127,8 +124,8 @@ public class AppApiImpl implements AppApi {
     }
 
     @Override
-    public void streamSearch(String query, String userDestination) {
-        executeRagSearchStream(query, userDestination);
+    public void streamSearch(String query, String sessionId) {
+        executeRagSearchStream(query, sessionId);
     }
 
     /**
@@ -150,9 +147,9 @@ public class AppApiImpl implements AppApi {
     }
 
     /**
-     * 流式 RAG 搜索流程（WebSocket）
+     * 流式 RAG 搜索流程
      */
-    private void executeRagSearchStream(String query, String userDestination) {
+    private void executeRagSearchStream(String query, String sessionId) {
         try {
             log.info("开始流式搜索，查询: {}", query);
 
@@ -165,7 +162,7 @@ public class AppApiImpl implements AppApi {
 
             log.info("流式查询类型: {}, 检索到 {} 条向量结果", queryType, vectorResults.size());
 
-            // 构造推理请求（可根据实际需要补充上下文）
+            // 构造推理请求
             InferenceRequest request = buildInferenceRequest(query, vectorResults);
 
             Flux<ApiChatChunk> chunkFlux = inferenceService.streamInfer(request);
@@ -189,7 +186,7 @@ public class AppApiImpl implements AppApi {
                                     .finishReason(null)
                                     .message(null)
                                     .build();
-                            messagingTemplate.convertAndSend(userDestination, increment);
+                            RagWebSocketHandler.sendMessageToSession(sessionId, increment);
                         }
 
                         // 发现结束标志则推送完成
@@ -200,7 +197,7 @@ public class AppApiImpl implements AppApi {
                                     .finishReason(finishReason)
                                     .message(null)
                                     .build();
-                            messagingTemplate.convertAndSend(userDestination, end);
+                            RagWebSocketHandler.sendMessageToSession(sessionId, end);
                         }
                     },
                     error -> {
@@ -209,7 +206,7 @@ public class AppApiImpl implements AppApi {
                                 .finishReason(null)
                                 .message("Error: " + error.getMessage())
                                 .build();
-                        messagingTemplate.convertAndSend(userDestination, errorResponse);
+                        RagWebSocketHandler.sendMessageToSession(sessionId, errorResponse);
                     },
                     () -> {
                         // Flux 正常完成时的兜底结束信号
@@ -218,7 +215,7 @@ public class AppApiImpl implements AppApi {
                                 .finishReason("stop")
                                 .message(null)
                                 .build();
-                        messagingTemplate.convertAndSend(userDestination, complete);
+                        RagWebSocketHandler.sendMessageToSession(sessionId, complete);
                     }
             );
 
@@ -229,7 +226,7 @@ public class AppApiImpl implements AppApi {
                     .finishReason(null)
                     .message("初始化失败: " + e.getMessage())
                     .build();
-            messagingTemplate.convertAndSend(userDestination, errorResponse);
+            RagWebSocketHandler.sendMessageToSession(sessionId, errorResponse);
         }
     }
 

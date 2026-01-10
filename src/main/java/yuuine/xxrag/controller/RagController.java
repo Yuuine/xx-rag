@@ -2,13 +2,10 @@ package yuuine.xxrag.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import yuuine.xxrag.dto.common.Result;
 import yuuine.xxrag.app.api.AppApi;
+import yuuine.xxrag.dto.common.Result;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -46,20 +43,4 @@ public class RagController {
     ) {
         return appApi.asyncSearch(query);
     }
-
-
-    // 基于 Websocket 的流式对话请求
-    @MessageMapping("streamSearch")
-    public void handleStreamSearch(
-            @Payload String query,
-            StompHeaderAccessor headerAccessor
-    ) {
-        String sessionId = headerAccessor.getSessionId();
-        String userDestination = "/user/" + sessionId + "/queue/reply";
-
-        System.out.println("收到消息: " + query);
-
-        appApi.streamSearch(query, userDestination);
-    }
-
 }

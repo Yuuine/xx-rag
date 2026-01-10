@@ -1,5 +1,7 @@
 server:
   port: 8081
+  jetty:
+    connection-idle-timeout: 300000
 spring:
   application:
     name: xx-rag

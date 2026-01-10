@@ -76,10 +76,15 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
-        <!-- Spring WebSocket 支持 -->
+        <!-- Spring WebSocket Support -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+        <!-- Jakarta WebSocket API for native WebSocket support -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jetty</artifactId>
         </dependency>
         <!-- jackson -->
         <dependency>
@@ -196,5 +201,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
