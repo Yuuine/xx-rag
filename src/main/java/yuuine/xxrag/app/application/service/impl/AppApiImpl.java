@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -235,11 +236,71 @@ public class AppApiImpl implements AppApi {
      */
     private InferenceRequest buildInferenceRequest(String query, List<VectorSearchResult> contexts) {
         InferenceRequest request = new InferenceRequest();
-        request.setMessages(List.of(
-                new InferenceRequest.Message("user", query)
-        ));
+
+        // 判断是否为闲聊类型（没有上下文）
+        boolean isChitChat = contexts == null || contexts.isEmpty();
+
+        if (isChitChat) {
+            // 闲聊类型：只使用普通系统提示词
+            String ordinarySystemPrompt = """
+                    作为潇潇知识助手，你的作用是结合知识库回答用户的问题。
+                    但是现在用户只是想和你普通的聊天。
+                    """;
+
+            request.setMessages(List.of(
+                    new InferenceRequest.Message("system", ordinarySystemPrompt),
+                    new InferenceRequest.Message("user", query)
+            ));
+        } else {
+            // 知识查询类型：构建上下文和完整的提示词
+            String context = buildContext(contexts);
+            String userPrompt = buildUserPrompt(context, query);
+            String knowledgeSystemPrompt = """
+                    你是潇潇知识问答助手，需遵守：
+                    1. 仅用简体中文作答。
+                    2. 回答需先给结论，再给论据。
+                    3. 若无足够信息，请回答"暂无相关信息"并说明原因。
+                    4. 回复自然、流畅，不要提及"文档"或"检索"等技术术语。
+                    """;
+
+            request.setMessages(List.of(
+                    new InferenceRequest.Message("system", knowledgeSystemPrompt),
+                    new InferenceRequest.Message("user", userPrompt)
+            ));
+        }
         return request;
     }
+
+    /**
+     * 构建上下文内容
+     */
+    private String buildContext(List<VectorSearchResult> vectorSearchResults) {
+        if (vectorSearchResults == null || vectorSearchResults.isEmpty()) {
+            return "";
+        }
+
+        return vectorSearchResults.stream()
+                .sorted((a, b) -> Float.compare(b.getScore(), a.getScore()))  // 按分数降序
+                .filter(result -> result.getContent() != null && !result.getContent().trim().isEmpty()) // 过滤掉内容为空的结果
+                .map(result ->
+                        "来源：" + "\n" +
+                                "文档名称：" + result.getSource() + "\n" +
+                                "文档内容：" + "\n" + result.getContent())
+                .collect(Collectors.joining("\n\n"));
+    }
+
+    /**
+     * 构建用户提示词
+     */
+    private String buildUserPrompt(String context, String query) {
+        return """
+                相关文档内容：
+                %s
+                
+                用户问题：%s
+                """.formatted(context.isEmpty() ? "（无相关文档）" : context, query);
+    }
+
 
     // 意图判断逻辑保持不变
     private String determineQueryType(String query) {

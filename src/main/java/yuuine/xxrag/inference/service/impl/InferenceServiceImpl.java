@@ -3,9 +3,11 @@ package yuuine.xxrag.inference.service.impl;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
@@ -63,7 +65,7 @@ public class InferenceServiceImpl implements InferenceService {
             for (InferenceRequest.Message message : request.getMessages()) {
                 messages.add(new ChatRequest.Message(message.getRole(), message.getContent()));
             }
-            ChatRequest chatRequest = getChatRequest(messages,false);
+            ChatRequest chatRequest = getChatRequest(messages, false);
 
             log.debug(
                     "调用 DeepSeek API，model: {},  temperature: {}, max-tokens: {}, timeout-seconds: {}",
@@ -114,28 +116,32 @@ public class InferenceServiceImpl implements InferenceService {
                 .toList();
         ChatRequest chatRequest = getChatRequest(messages, true);
 
+        System.out.println(chatRequest);
+
         log.debug("调用 DeepSeek 流式 API，model: {}", properties.getModel());
 
         return webClient.post()
                 .uri("/chat/completions")
                 .bodyValue(chatRequest)
+                .accept(MediaType.TEXT_EVENT_STREAM)  // 一定要加
                 .retrieve()
-                .bodyToFlux(String.class)  // 获取原始 SSE 行
-                .filter(line -> line.startsWith("data: "))  // 过滤有效行
-                .map(line -> line.substring("data: ".length()).trim())  // 提取 JSON
-                .filter(json -> !"[DONE]".equals(json))  // 排除结束标志
-                .<ApiChatChunk>handle((json, sink) -> {
+                .bodyToFlux(new ParameterizedTypeReference<ServerSentEvent<String>>() {
+                }) // 字符串类型 SSE
+                .filter(sse -> sse.data() != null && !"[DONE]".equals(sse.data()))
+                .mapNotNull(sse -> {
                     try {
-                        sink.next(objectMapper.readValue(json, ApiChatChunk.class));
+                        return objectMapper.readValue(sse.data(), ApiChatChunk.class);
                     } catch (Exception e) {
-                        log.warn("解析 ApiChatChunk 失败: {}", json, e);
-                        sink.error(new RuntimeException("Chunk 解析异常", e));
+                        log.warn("解析 ApiChatChunk 失败: {}", sse.data(), e);
+                        return null;
                     }
                 })
+                .filter(chunk -> true)
                 .onErrorResume(error -> {
                     log.error("DeepSeek 流式 API 调用失败", error);
                     return Flux.error(new RuntimeException("LLM 流式推理异常: " + error.getMessage()));
                 });
+
     }
 
     @NotNull
