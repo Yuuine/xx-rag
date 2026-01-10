@@ -23,5 +23,4 @@ public class DeepSeekProperties {
 
     private Integer timeoutSeconds;
 
-    private boolean stream = false;  // 否启用流式模式
 }

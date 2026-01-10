@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import yuuine.xxrag.dto.common.Result;
 import yuuine.xxrag.app.api.AppApi;
+import yuuine.xxrag.dto.common.Result;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
