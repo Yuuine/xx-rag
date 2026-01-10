@@ -543,6 +543,14 @@
         const maxReconnectAttempts = 5;
         const reconnectInterval = 3000;
 
+        // 当前会话的状态变量
+        let currentStreamStartTime = null;
+        let lastAiMessageElement = null;
+        let accumulatedContent = ''; // 累积内容，用于去除多余空格
+        let isStreaming = false; // 标记是否正在流式传输
+        let timeoutId = null; // 超时计时器ID
+        const TIMEOUT_DURATION = 6 * 60 * 10000; // 60分钟超时
+
         function showToast(message, type = 'error') {
             toast.textContent = message;
             toast.className = 'toast ' + type;
@@ -573,24 +581,38 @@
 
                         // 根据消息类型处理
                         if (data.finishReason === 'stop') {
-                            // 结束消息
+                            // 结束消息 - 完成流式传输
                             console.log('流式传输已完成');
+                            finalizeStream();
                         } else if (data.message && data.message.startsWith('Error:')) {
                             // 错误消息
                             console.error('WebSocket错误:', data.message);
                             renderAiMessage('抱歉，处理过程中出现错误：' + data.message.replace('Error: ', ''));
+                            finalizeStream();
                         } else if (data.content) {
                             // 内容消息 - 需要累积显示
-                            appendToLastAiMessage(data.content);
+                            processStreamContent(data.content);
+                            // 每次收到有效内容时，重置超时计时器
+                            resetTimeoutTimer();
                         }
                     } catch (e) {
                         console.error('处理WebSocket消息时出错:', e);
                         renderAiMessage('收到无法解析的消息');
+                        finalizeStream();
                     }
                 };
 
                 ws.onclose = function (event) {
                     console.log('WebSocket连接已关闭，代码:', event.code, '原因:', event.reason);
+
+                    // 如果正在流式传输时连接关闭，则完成当前流
+                    if (isStreaming) {
+                        finalizeStream();
+                    }
+
+                    // 清除超时计时器
+                    clearTimeout(timeoutId);
+                    timeoutId = null;
 
                     // 尝试重连（除非是正常关闭）
                     if (event.code !== 1000 && wsReconnectAttempts < maxReconnectAttempts) {
@@ -618,23 +640,91 @@
         // 连接WebSocket
         connectWebSocket();
 
-        // 存储最后一条AI消息的元素，用于流式追加内容
-        let lastAiMessageElement = null;
+        // 设置超时计时器
+        function setupTimeoutTimer() {
+            // 清除已有的超时计时器
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+            }
 
-        function appendToLastAiMessage(content) {
+            // 设置新的超时计时器
+            timeoutId = setTimeout(function() {
+                if (isStreaming) {
+                    console.log('请求超时，结束当前流');
+                    showToast('请求超时，已结束当前会话', 'error');
+                    finalizeStream();
+
+                    // 如果WebSocket还在连接状态，可以发送取消消息
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        try {
+                            ws.send(JSON.stringify({ type: 'cancel' }));
+                        } catch (e) {
+                            console.error('发送取消消息失败:', e);
+                        }
+                    }
+                }
+            }, TIMEOUT_DURATION);
+        }
+
+        // 重置超时计时器
+        function resetTimeoutTimer() {
+            if (isStreaming && timeoutId) {
+                console.log('重置超时计时器');
+                clearTimeout(timeoutId);
+                setupTimeoutTimer();
+            }
+        }
+
+        // 清除超时计时器
+        function clearTimeoutTimer() {
+            if (timeoutId) {
+                clearTimeout(timeoutId);
+                timeoutId = null;
+            }
+        }
+
+        // 处理流式内容，去除多余空格
+        function processStreamContent(content) {
+            // 如果内容为空，直接返回
+            if (!content || content.trim() === '') return;
+
+            // 累积内容，用于去除消息段之间的多余空格
+            accumulatedContent += content;
+
+            // 清理多余的空格：将连续的多个空格替换为单个空格
+            // 但保留换行符和必要的空格
+            let cleanedContent = accumulatedContent;
+
+            // 处理Markdown格式中的特殊情况
+            // 1. 代码块中的空格应该保留
+            // 2. 普通文本中多个连续空格替换为一个
+            // 这里使用简单的处理：将两个以上的空格替换为一个
+            // 但保留换行前后的空格
+            cleanedContent = cleanedContent.replace(/ {2,}/g, ' ');
+
+            // 更新显示
+            updateAiMessageDisplay(cleanedContent);
+        }
+
+        // 更新AI消息显示
+        function updateAiMessageDisplay(content) {
             if (!lastAiMessageElement) {
-                // 如果没有最后的AI消息，则创建一个临时的
+                // 创建新的AI消息元素
                 lastAiMessageElement = document.createElement('div');
                 lastAiMessageElement.className = 'message ai';
+
+                // 解析Markdown
                 const html = marked.parse(content);
                 lastAiMessageElement.innerHTML = html;
 
+                // 添加时间戳
                 const timestamp = document.createElement('div');
                 timestamp.className = 'timestamp';
                 timestamp.textContent = new Date().toLocaleString();
                 timestamp.style.display = showTimestamps ? 'block' : 'none';
                 lastAiMessageElement.appendChild(timestamp);
 
+                // 添加"正在思考中..."脚注
                 const footnote = document.createElement('div');
                 footnote.className = 'footnote';
                 footnote.textContent = '正在思考中...';
@@ -643,86 +733,82 @@
                 messagesContainer.appendChild(lastAiMessageElement);
                 scrollToBottom();
             } else {
-                // 如果已经有AI消息，则追加内容
-                const currentHtml = lastAiMessageElement.innerHTML;
-                const newContent = currentHtml.replace(/<div class="footnote">[\s\S]*<\/div>$/, '') + content;
+                // 更新现有消息
+                // 解析Markdown
+                const html = marked.parse(content);
 
-                // 重新解析整个内容以确保markdown正确渲染
-                const textContent = extractTextFromMessage(lastAiMessageElement) + content;
-                const html = marked.parse(textContent);
+                // 保存时间戳和脚注
+                const timestampEl = lastAiMessageElement.querySelector('.timestamp');
+                const footnoteEl = lastAiMessageElement.querySelector('.footnote');
 
-                // 保留时间戳和脚注
-                lastAiMessageElement.innerHTML = '';
+                // 更新内容
                 lastAiMessageElement.innerHTML = html;
 
                 // 重新添加时间戳
-                const timestamp = lastAiMessageElement.querySelector('.timestamp') ||
-                    lastAiMessageElement.appendChild(document.createElement('div'));
-                if (!timestamp.classList.contains('timestamp')) {
-                    timestamp.className = 'timestamp';
-                    timestamp.textContent = new Date().toLocaleString();
-                    timestamp.style.display = showTimestamps ? 'block' : 'none';
-                    lastAiMessageElement.appendChild(timestamp);
+                if (timestampEl) {
+                    lastAiMessageElement.appendChild(timestampEl);
+                } else {
+                    const newTimestamp = document.createElement('div');
+                    newTimestamp.className = 'timestamp';
+                    newTimestamp.textContent = new Date().toLocaleString();
+                    newTimestamp.style.display = showTimestamps ? 'block' : 'none';
+                    lastAiMessageElement.appendChild(newTimestamp);
                 }
 
-                // 更新脚注
-                let footnote = lastAiMessageElement.querySelector('.footnote');
-                if (!footnote) {
-                    footnote = document.createElement('div');
-                    footnote.className = 'footnote';
-                    lastAiMessageElement.appendChild(footnote);
+                // 重新添加"正在思考中..."脚注
+                if (footnoteEl) {
+                    footnoteEl.textContent = '正在思考中...';
+                    lastAiMessageElement.appendChild(footnoteEl);
+                } else {
+                    const newFootnote = document.createElement('div');
+                    newFootnote.className = 'footnote';
+                    newFootnote.textContent = '正在思考中...';
+                    lastAiMessageElement.appendChild(newFootnote);
                 }
-                footnote.textContent = '正在思考中...';
+            }
+
+            scrollToBottom();
+        }
+
+        // 完成流式传输
+        function finalizeStream() {
+            if (isStreaming && lastAiMessageElement) {
+                // 计算推理耗时
+                const duration = currentStreamStartTime ?
+                    ((new Date() - currentStreamStartTime) / 1000).toFixed(2) : '0.00';
+
+                // 更新脚注，移除"正在思考中..."，显示实际耗时
+                const footnote = lastAiMessageElement.querySelector('.footnote');
+                if (footnote) {
+                    footnote.textContent = `推理耗时: ${duration} 秒`;
+                }
+
+                // 清除超时计时器
+                clearTimeoutTimer();
+
+                // 重置状态
+                isStreaming = false;
+                currentStreamStartTime = null;
+                lastAiMessageElement = null;
+                accumulatedContent = '';
+
+                // 恢复发送按钮状态
+                sendBtn.disabled = false;
+                sendBtn.textContent = '发送';
+                questionInput.focus();
             }
         }
 
-        // 辅助函数：从消息元素中提取纯文本内容
-        function extractTextFromMessage(element) {
-            const clone = element.cloneNode(true);
-            // 移除时间戳和脚注元素
-            const timestampEl = clone.querySelector('.timestamp');
-            const footnoteEl = clone.querySelector('.footnote');
-            const referencesEl = clone.querySelector('.references');
+        // 开始新的流式传输
+        function startNewStream() {
+            // 重置状态
+            isStreaming = true;
+            currentStreamStartTime = new Date();
+            lastAiMessageElement = null;
+            accumulatedContent = '';
 
-            if (timestampEl) timestampEl.remove();
-            if (footnoteEl) footnoteEl.remove();
-            if (referencesEl) referencesEl.remove();
-
-            return clone.innerText || clone.textContent || '';
-        }
-
-        // 完成AI消息，添加最终的脚注和引用
-        function finalizeLastAiMessage(duration, references = []) {
-            if (lastAiMessageElement) {
-                // 更新脚注
-                let footnote = lastAiMessageElement.querySelector('.footnote');
-                if (!footnote) {
-                    footnote = document.createElement('div');
-                    footnote.className = 'footnote';
-                    lastAiMessageElement.appendChild(footnote);
-                }
-                footnote.textContent = `推理耗时: ${duration} 秒`;
-
-                // 添加尾注形式的参考来源（去重、仅显示文件名）
-                if (references.length > 0) {
-                    const uniqueSources = [...new Set(references.map(ref => ref.source))];
-                    if (uniqueSources.length > 0) {
-                        const refsDiv = document.createElement('div');
-                        refsDiv.className = 'references';
-                        refsDiv.innerHTML = '<strong>参考来源：</strong>';
-                        const ol = document.createElement('ol');
-                        uniqueSources.forEach(source => {
-                            const li = document.createElement('li');
-                            li.textContent = source;
-                            ol.appendChild(li);
-                        });
-                        refsDiv.appendChild(ol);
-                        lastAiMessageElement.appendChild(refsDiv);
-                    }
-                }
-
-                lastAiMessageElement = null; // 重置引用
-            }
+            // 设置超时计时器
+            setupTimeoutTimer();
         }
 
         uploadTrigger.addEventListener('click', (e) => {
@@ -840,69 +926,20 @@
             sendBtn.disabled = true;
             sendBtn.innerHTML = '<span class="loading"></span>思考中';
 
-            const startTime = new Date();
+            // 开始新的流式传输
+            startNewStream();
 
             // 通过WebSocket发送问题
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(question);
-
-                // 清空之前的AI消息引用
-                lastAiMessageElement = null;
             } else {
                 showToast('WebSocket未连接，请稍后再试', 'error');
                 sendBtn.disabled = false;
                 sendBtn.textContent = '发送';
                 questionInput.focus();
+                // 如果WebSocket未连接，也结束流
+                finalizeStream();
             }
-
-            // 设置超时处理
-            setTimeout(() => {
-                if (sendBtn.disabled) {
-                    sendBtn.disabled = false;
-                    sendBtn.textContent = '发送';
-                    questionInput.focus();
-                }
-            }, 30000); // 30秒超时
-
-            // 当WebSocket收到完成消息时，更新按钮状态
-            // 注意：这需要在onmessage处理程序中完成
-        }
-
-        // 扩展WebSocket的onmessage处理以更新UI状态
-        const originalOnMessage = ws ? ws.onmessage : null;
-        if (ws) {
-            ws.onmessage = function (event) {
-                // 调用原来的处理程序
-                if (originalOnMessage) {
-                    originalOnMessage.call(this, event);
-                }
-
-                try {
-                    const data = JSON.parse(event.data);
-
-                    // 如果是结束消息，恢复按钮状态
-                    if (data.finishReason === 'stop') {
-                        setTimeout(() => {
-                            sendBtn.disabled = false;
-                            sendBtn.textContent = '发送';
-                            questionInput.focus();
-
-                            // 完成最后的AI消息
-                            const duration = ((new Date() - startTime) / 1000).toFixed(2);
-                            finalizeLastAiMessage(duration);
-                        }, 100);
-                    } else if (data.message && data.message.startsWith('Error:')) {
-                        // 如果是错误消息，也恢复按钮状态
-                        setTimeout(() => {
-                            sendBtn.disabled = false;
-                            sendBtn.textContent = '发送';
-                            questionInput.focus();
-                        }, 100);
-                    }
-                } catch (e) {
-                    console.error('处理WebSocket消息时出错:', e);
-                }
-            };
         }
 
         sendBtn.addEventListener('click', sendQuestion);
