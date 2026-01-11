@@ -1,4 +1,3 @@
-// src/main/java/yuuine/xxrag/vector/application/VectorServiceImpl.java
 package yuuine.xxrag.vector.application;
 
 import lombok.RequiredArgsConstructor;
@@ -63,7 +62,7 @@ public class VectorApiImpl implements VectorApi {
             return;
         }
         log.info("接收到批量删除请求，fileMd5 数量: {}", fileMd5s.size());
-        vectorDeleteService.deleteChunksByFileMd5s(fileMd5s);
-        log.info("批量删除成功");
+        long deleted = vectorDeleteService.deleteByFileMd5s(fileMd5s);
+        log.info("批量删除成功，删除数量: {}", deleted);
     }
 }

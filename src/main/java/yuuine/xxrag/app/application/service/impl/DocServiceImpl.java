@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import yuuine.xxrag.app.application.service.DocService;
-import yuuine.xxrag.app.application.service.impl.DocumentDeletionService;
 import yuuine.xxrag.app.domain.model.RagDocuments;
 import yuuine.xxrag.app.domain.repository.DocMapper;
 import yuuine.xxrag.app.application.dto.response.DocList;
