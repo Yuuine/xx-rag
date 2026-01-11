@@ -35,12 +35,12 @@ public interface RagChunkDocumentRepository
             """)
     List<SearchHit<RagChunkDocument>> bm25Search(String queryText);
 
-    @Query("""
-            {
-              "terms": {
-                "fileMd5": ?0
-              }
-            }
-            """)
-    void deleteAllByFileMd5In(List<String> fileMd5s);
+//    @Query("""
+//            {
+//              "terms": {
+//                "fileMd5": ?0
+//              }
+//            }
+//            """)
+//    void deleteAllByFileMd5In(List<String> fileMd5s);
 }

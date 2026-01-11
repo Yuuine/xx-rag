@@ -21,8 +21,7 @@ public class RagVectorServiceImpl implements RagVectorService {
 
     @Override
     public VectorAddResult add(List<VectorAddRequest> chunks) {
-        log.debug("开始添加向量数据，chunks数量: {}", chunks.size());
-        log.info("向量数据添加，源文件数量: {}", chunks.stream().map(VectorAddRequest::getSource).distinct().count());
+        log.info("开始添加向量数据，chunks数量: {}，源文件数量: {}", chunks.size(), chunks.stream().map(VectorAddRequest::getSource).distinct().count());
 
         try {
             VectorAddResult vectorAddResult = vectorApi.addVectors(chunks);
@@ -41,8 +40,7 @@ public class RagVectorServiceImpl implements RagVectorService {
 
     @Override
     public List<VectorSearchResult> search(String query) {
-        log.debug("开始向量搜索，查询: {}", query);
-        log.info("向量搜索请求，查询: {}", query);
+        log.info("开始向量搜索，查询: {}", query);
 
         try {
 

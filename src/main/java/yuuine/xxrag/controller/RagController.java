@@ -34,6 +34,7 @@ public class RagController {
     public Result<Object> deleteDocuments(
             @RequestBody List<String> fileMd5s
     ) {
+        log.debug("接收到删除文档请求，文件MD5数量: {}", fileMd5s.size());
         return appApi.deleteDocuments(fileMd5s);
     }
 

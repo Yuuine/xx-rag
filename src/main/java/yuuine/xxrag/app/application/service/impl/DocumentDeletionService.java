@@ -36,6 +36,7 @@ public class DocumentDeletionService {
 
         // 然后删除向量库中的对应数据
         try {
+            log.debug("准备删除向量库中的文件: {}", fileMd5s);
             ragVectorService.deleteChunksByFileMd5s(fileMd5s);
             log.info("向量库 chunks 删除完成，文件数量: {}", fileMd5s.size());
         } catch (Exception e) {

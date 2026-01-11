@@ -33,9 +33,12 @@ public class DocumentManagementService {
      */
     public Result<Object> deleteDocuments(List<String> fileMd5s) {
         if (fileMd5s == null || fileMd5s.isEmpty()) {
+            log.warn("删除文档请求失败：fileMd5 列表为空");
             return Result.error("fileMd5 列表不能为空");
         }
+        log.info("接收到删除 {} 个文档的请求", fileMd5s.size());
         docService.deleteDocuments(fileMd5s);
+        log.debug("文档删除请求处理完成");
         return Result.success();
     }
 }
