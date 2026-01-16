@@ -44,6 +44,23 @@ services:
       interval: 10s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: my-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   app:
     build: .
     container_name: xx-rag-app
@@ -51,6 +68,8 @@ services:
       mysql:
         condition: service_healthy
       elasticsearch:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     ports:
       - "8081:8081"
@@ -60,6 +79,10 @@ services:
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: 123456
       SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
       EMBEDDING_API_KEY: ${EMBEDDING_API_KEY}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-123456}
@@ -68,3 +91,4 @@ services:
 volumes:
   mysql_data:
   es_data:
+  rabbitmq_data:
