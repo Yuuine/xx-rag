@@ -19,6 +19,23 @@ spring:
       enabled: true
       max-file-size: 100MB
       max-request-size: 100MB
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    # 连接池优化
+    template:
+      mandatory: true             # 找不到路由时返回消息
+    listener:
+      simple:
+        prefetch: 1             # 每次预取1条，适合慢消费者
+        retry:
+          enabled: true
+          max-retries: 3
+    publisher-confirm-type: correlated
+    publisher-returns: true
 
 deepseek:
   api-key: ${DEEPSEEK_API_KEY:}
