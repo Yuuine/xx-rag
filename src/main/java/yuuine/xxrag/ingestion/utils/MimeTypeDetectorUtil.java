@@ -20,6 +20,8 @@ public final class MimeTypeDetectorUtil {
     private static final Set<String> SUPPORTED_MIME_TYPES = Set.of(
             "application/pdf",
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "application/vnd.ms-excel",
             "text/plain",
             "text/markdown"
     );
@@ -77,6 +79,10 @@ public final class MimeTypeDetectorUtil {
             return "application/pdf";
         } else if (lowerName.endsWith(".docx")) {
             return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        } else if (lowerName.endsWith(".xlsx")) {
+            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        } else if (lowerName.endsWith(".xls")) {
+            return "application/vnd.ms-excel";
         } else if (lowerName.endsWith(".md") || lowerName.endsWith(".markdown")) {
             return "text/markdown";
         } else if (lowerName.endsWith(".txt")) {

@@ -13,6 +13,8 @@ public enum ErrorCode {
     FILE_IO_PROCESS_ERROR(1005, "文件IO处理错误"),
     FILE_UPLOAD_FAILED(1006, "文件上传失败"),
     UNSUPPORTED_FILE_TYPE(1007, "不支持的文件类型"),
+    FILE_EMPTY_ERROR(1008, "文件为空"),
+    FILE_TOO_LARGE_ERROR(1009, "文件大小超出限制"),
     ;
 
     private final int code;
