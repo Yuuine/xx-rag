@@ -22,13 +22,51 @@
             overflow: hidden;
         }
 
-        header {
+        .header-with-close {
+            position: relative;
             background: #0084ff;
             color: white;
             padding: 16px 24px;
+            text-align: center;
             font-size: 1.3em;
             font-weight: 500;
-            text-align: center;
+        }
+
+        /* 标题文字保持居中 */
+        .header-with-close h1 {
+            margin: 0;
+            font-size: 1.3em;
+            font-weight: 500;
+        }
+
+        /* 右上角关闭按钮 */
+        .close-btn {
+            position: absolute;
+            top: 50%;
+            right: 24px;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1.4em;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        /* 鼠标悬停时更明显的提示 */
+        .close-btn:active {
+            transform: translateY(-50%) scale(0.95);
         }
 
         .list {
@@ -91,7 +129,7 @@
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 16px;
         }
 
         .batch-left {
@@ -104,6 +142,34 @@
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+
+        .doc-count-display {
+            color: #555;
+            font-size: 0.98em;
+            font-weight: 500;
+            white-space: nowrap;
+            min-width: 100px;
+            text-align: center;
+            flex: 0 0 auto;
+        }
+
+        @media (max-width: 680px) {
+            .batch-actions {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 12px;
+            }
+
+            .doc-count-display {
+                order: 3;
+                text-align: center;
+                margin: 8px 0;
+            }
+
+            .search-box {
+                order: 2;
+            }
         }
 
         #searchInput {
@@ -237,17 +303,83 @@
             font-size: 1.1em;
             display: none;
         }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 24px 0 16px;
+            flex-wrap: wrap;
+        }
+
+        .page-btn {
+            background: #ffffff;
+            color: #0084ff;
+            border: 1px solid #d0e4ff;
+            padding: 8px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.2s;
+            min-width: 42px;
+            text-align: center;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background: #e6f3ff;
+            border-color: #a3d0ff;
+        }
+
+        .page-btn:disabled {
+            color: #ccc;
+            border-color: #e0e0e0;
+            cursor: not-allowed;
+            background: #f8f9fa;
+        }
+
+        .page-btn.active {
+            background: #0084ff;
+            color: white;
+            border-color: #0084ff;
+            font-weight: 600;
+        }
+
+        .page-numbers {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .page-numbers button {
+            /* 继承 page-btn 样式 */
+        }
+
+        .ellipsis {
+            padding: 8px 12px;
+            color: #666;
+            font-size: 0.95em;
+            cursor: default;
+            user-select: none;
+        }
     </style>
 </head>
 <body>
 <div class="container">
-    <header>已上传文档列表</header>
+    <header class="header-with-close">
+        <h1>已上传文档列表</h1>
+        <button class="close-btn" onclick="window.close()" title="关闭">×</button>
+    </header>
     <div class="list">
         <div class="batch-actions">
             <div class="batch-left">
                 <label><input type="checkbox" id="selectAll"> 全选</label>
                 <button class="batch-delete-btn" id="batchDeleteBtn" disabled>批量删除</button>
             </div>
+            <div id="docCount" class="doc-count-display">
+                <span id="totalCount">0</span> 个文档
+            </div>
+
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="搜索文档名称...">
                 <button id="searchBtn">搜索</button>
@@ -266,8 +398,16 @@
         </table>
         <div id="emptyMsg" class="empty" style="display: none;">暂无上传文档</div>
         <div id="noResultsMsg" class="no-results">无匹配文档</div>
+
+        <!-- 分页控件 -->
+        <div id="paginationControls" class="pagination-controls" style="display: none;">
+            <button id="prevPage" class="page-btn prev">上一页</button>
+
+            <div class="page-numbers" id="pageNumbers"></div>
+
+            <button id="nextPage" class="page-btn next">下一页</button>
+        </div>
     </div>
-    <button class="back-btn" onclick="window.close()">关闭页面</button>
 </div>
 
 <!-- 确认删除模态框 -->
@@ -286,6 +426,18 @@
 <div id="toast" class="toast"></div>
 
 <script>
+    // ==================== 全局状态 ====================
+    let currentPage = 1;
+    const pageSize = 10;                  // 每页显示条数，可调整
+    let allDocs = [];                     // 原始完整数据
+    let filteredDocs = [];                // 搜索过滤后的数据
+    let toDeleteMd5s = [];                // 待删除的 MD5 列表
+
+    // ==================== 工具函数 ====================
+    function formatDateTime(dateTimeStr) {
+        return dateTimeStr || '未知时间';
+    }
+
     function showToast(message, type = 'error') {
         const toast = document.getElementById('toast');
         toast.textContent = message;
@@ -294,13 +446,184 @@
         setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
-    function formatDateTime(dateTimeStr) {
-        return dateTimeStr || '未知时间';
+    // ==================== 渲染当前页 ====================
+    function renderCurrentPage() {
+        const tbody = document.querySelector('#docTable tbody');
+        tbody.innerHTML = '';
+
+        const start = (currentPage - 1) * pageSize;
+        const end = start + pageSize;
+        const pageData = filteredDocs.slice(start, end);
+
+        pageData.forEach(doc => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="checkbox" class="row-checkbox" value="${doc.fileMd5}"></td>
+                <td>${doc.fileName || '未知文件名'}</td>
+                <td>${formatDateTime(doc.createdAt)}</td>
+                <td><button class="delete-btn" data-md5="${doc.fileMd5}">删除</button></td>
+            `;
+            // 行点击高亮
+            tr.onclick = (e) => {
+                if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+                document.querySelectorAll('tr.highlight').forEach(r => r.classList.remove('highlight'));
+                tr.classList.add('highlight');
+                tr.scrollIntoView({behavior: 'smooth', block: 'center'});
+            };
+            tbody.appendChild(tr);
+        });
+
+        // 绑定删除按钮
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                openConfirmModal([btn.dataset.md5]);
+            };
+        });
+
+        updatePaginationUI();
+        updateBatchButton();
     }
 
-    let toDeleteMd5s = [];
-    let allRows = []; // 缓存所有表格行，用于搜索过滤
+    // ==================== 分页相关 ====================
+    const MAX_PAGE_BUTTONS = 15;
 
+    function generatePageButtons() {
+        const container = document.getElementById('pageNumbers');
+        container.innerHTML = '';
+
+        const totalItems = filteredDocs.length;
+        if (totalItems === 0) return;
+
+        const totalPages = Math.ceil(totalItems / pageSize);
+        if (totalPages <= 1) return;
+
+        let startPage = Math.max(1, currentPage - Math.floor(MAX_PAGE_BUTTONS / 2));
+        let endPage = startPage + MAX_PAGE_BUTTONS - 1;
+
+        if (endPage > totalPages) {
+            endPage = totalPages;
+            startPage = Math.max(1, endPage - MAX_PAGE_BUTTONS + 1);
+        }
+
+        // 第一页
+        if (startPage > 1) {
+            container.appendChild(createPageButton(1));
+            if (startPage > 2) container.appendChild(createEllipsis());
+        }
+
+        // 中间页码
+        for (let i = startPage; i <= endPage; i++) {
+            const btn = createPageButton(i);
+            if (i === currentPage) {
+                btn.classList.add('active');
+                btn.disabled = true;
+            }
+            container.appendChild(btn);
+        }
+
+        // 最后一页
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) container.appendChild(createEllipsis());
+            container.appendChild(createPageButton(totalPages));
+        }
+    }
+
+    function createPageButton(page) {
+        const btn = document.createElement('button');
+        btn.className = 'page-btn';
+        btn.textContent = page;
+        btn.addEventListener('click', () => {
+            currentPage = page;
+            renderCurrentPage();
+        });
+        return btn;
+    }
+
+    function createEllipsis() {
+        const span = document.createElement('span');
+        span.className = 'ellipsis';
+        span.textContent = '...';
+        return span;
+    }
+
+    function updatePaginationUI() {
+        const totalItems = filteredDocs.length;
+        const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+        // 修正页码越界
+        if (currentPage > totalPages) currentPage = totalPages;
+        if (currentPage < 1) currentPage = 1;
+
+        document.getElementById('totalCount').textContent = totalItems;
+
+        const showPagination = totalPages > 1 && totalItems > 0;
+        document.getElementById('paginationControls').style.display = showPagination ? 'flex' : 'none';
+
+        document.getElementById('prevPage').disabled = currentPage <= 1;
+        document.getElementById('nextPage').disabled = currentPage >= totalPages;
+
+        generatePageButtons();
+    }
+
+    // ==================== 搜索过滤 ====================
+    function filterDocs(keyword) {
+        keyword = (keyword || '').trim().toLowerCase();
+
+        if (!keyword) {
+            filteredDocs = [...allDocs];
+        } else {
+            filteredDocs = allDocs.filter(doc =>
+                (doc.fileName || '').toLowerCase().includes(keyword)
+            );
+        }
+
+        currentPage = 1; // 搜索后重置到第一页
+        renderCurrentPage();
+
+        document.getElementById('noResultsMsg').style.display =
+            (filteredDocs.length === 0 && keyword !== '') ? 'block' : 'none';
+        document.getElementById('docTable').style.display =
+            filteredDocs.length > 0 ? 'table' : 'none';
+        document.getElementById('emptyMsg').style.display = 'none';
+    }
+
+    // ==================== 加载文档 ====================
+    async function loadDocs() {
+        try {
+            const res = await fetch('/xx/getDoc');
+            const data = await res.json();
+
+            if (data.code === 0 && data.data && data.data.docs) {
+                allDocs = data.data.docs;
+                filteredDocs = [...allDocs];
+
+                if (allDocs.length > 0) {
+                    currentPage = 1;
+                    renderCurrentPage();
+                    document.getElementById('emptyMsg').style.display = 'none';
+                } else {
+                    document.getElementById('emptyMsg').style.display = 'block';
+                    document.getElementById('docTable').style.display = 'none';
+                    document.getElementById('paginationControls').style.display = 'none';
+                }
+            } else {
+                showToast('获取文档列表失败', 'error');
+                document.getElementById('emptyMsg').textContent = '加载失败，请刷新重试';
+                document.getElementById('emptyMsg').style.display = 'block';
+            }
+        } catch (err) {
+            console.error('加载文档列表失败:', err);
+            showToast('网络错误，请稍后重试', 'error');
+            document.getElementById('emptyMsg').style.display = 'block';
+        }
+
+        // 重置选择状态
+        document.getElementById('selectAll').checked = false;
+        document.getElementById('batchDeleteBtn').disabled = true;
+    }
+
+    // ==================== 删除确认模态框 ====================
     function openConfirmModal(md5s, isBatch = false) {
         toDeleteMd5s = md5s;
         const msg = document.getElementById('modalMessage');
@@ -314,7 +637,6 @@
 
     async function performDelete() {
         if (toDeleteMd5s.length === 0) return;
-
         try {
             const res = await fetch('/xx/delete', {
                 method: 'POST',
@@ -322,10 +644,9 @@
                 body: JSON.stringify(toDeleteMd5s)
             });
             const data = await res.json();
-
             if (data.code === 0) {
                 showToast(`删除成功（${toDeleteMd5s.length} 个）`, 'success');
-                loadDocs();
+                await loadDocs(); // 刷新列表
             } else {
                 showToast(data.msg || '删除失败', 'error');
             }
@@ -337,84 +658,7 @@
         }
     }
 
-    function filterDocs(keyword) {
-        keyword = keyword.trim().toLowerCase();
-        const tbody = document.querySelector('#docTable tbody');
-        const noResults = document.getElementById('noResultsMsg');
-        let visibleCount = 0;
-
-        allRows.forEach(tr => {
-            const fileNameCell = tr.cells[1].textContent; // 文档名称列
-            const matches = keyword === '' || fileNameCell.toLowerCase().includes(keyword);
-            tr.style.display = matches ? '' : 'none';
-            if (matches) visibleCount++;
-        });
-
-        // 显示/隐藏提示
-        document.getElementById('emptyMsg').style.display = 'none';
-        document.getElementById('docTable').style.display = visibleCount > 0 ? 'table' : 'none';
-        noResults.style.display = visibleCount === 0 && keyword !== '' ? 'block' : 'none';
-    }
-
-    async function loadDocs() {
-        try {
-            const res = await fetch('/xx/getDoc');
-            const data = await res.json();
-
-            const tbody = document.querySelector('#docTable tbody');
-            tbody.innerHTML = '';
-            allRows = [];
-
-            if (data.code === 0 && data.data && data.data.docs && data.data.docs.length > 0) {
-                data.data.docs.forEach(doc => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td><input type="checkbox" class="row-checkbox" value="${doc.fileMd5}"></td>
-                        <td>${doc.fileName || '未知文件名'}</td>
-                        <td>${formatDateTime(doc.createdAt)}</td>
-                        <td><button class="delete-btn" data-md5="${doc.fileMd5}">删除</button></td>
-                    `;
-                    // 点击行定位
-                    tr.onclick = (e) => {
-                        if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
-                        document.querySelectorAll('tr.highlight').forEach(r => r.classList.remove('highlight'));
-                        tr.classList.add('highlight');
-                        tr.scrollIntoView({behavior: 'smooth', block: 'center'});
-                    };
-                    tbody.appendChild(tr);
-                    allRows.push(tr);
-                });
-
-                // 绑定删除按钮
-                document.querySelectorAll('.delete-btn').forEach(btn => {
-                    btn.onclick = (e) => {
-                        e.stopPropagation(); // 防止触发行点击
-                        openConfirmModal([btn.dataset.md5]);
-                    };
-                });
-
-                document.getElementById('docTable').style.display = 'table';
-                document.getElementById('emptyMsg').style.display = 'none';
-                document.getElementById('noResultsMsg').style.display = 'none';
-            } else {
-                document.getElementById('emptyMsg').style.display = 'block';
-                document.getElementById('docTable').style.display = 'none';
-                document.getElementById('noResultsMsg').style.display = 'none';
-            }
-        } catch (err) {
-            console.error('加载文档列表失败:', err);
-            document.getElementById('emptyMsg').textContent = '加载失败，请刷新重试';
-            document.getElementById('emptyMsg').style.display = 'block';
-            document.getElementById('docTable').style.display = 'none';
-        }
-
-        // 重置批量选择
-        document.getElementById('selectAll').checked = false;
-        document.getElementById('batchDeleteBtn').disabled = true;
-        document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = false);
-    }
-
-    // 全选逻辑
+    // ==================== 批量选择逻辑 ====================
     document.getElementById('selectAll').onchange = function () {
         document.querySelectorAll('.row-checkbox').forEach(cb => {
             cb.checked = this.checked;
@@ -442,11 +686,12 @@
         openConfirmModal(md5s, true);
     };
 
-    // 模态框控制
+    // ==================== 模态框控制 ====================
     document.getElementById('cancelDelete').onclick = () => {
         document.getElementById('confirmModal').classList.remove('active');
         toDeleteMd5s = [];
     };
+
     document.getElementById('confirmDelete').onclick = performDelete;
 
     document.getElementById('confirmModal').onclick = e => {
@@ -456,21 +701,38 @@
         }
     };
 
-    // 搜索功能
+    // ==================== 搜索事件 ====================
     document.getElementById('searchBtn').onclick = () => {
-        const keyword = document.getElementById('searchInput').value;
-        filterDocs(keyword);
+        filterDocs(document.getElementById('searchInput').value);
     };
 
     document.getElementById('searchInput').addEventListener('keydown', e => {
         if (e.key === 'Enter') {
-            const keyword = e.target.value;
-            filterDocs(keyword);
+            filterDocs(e.target.value);
         }
     });
 
-    document.getElementById('searchInput').addEventListener('input', e => filterDocs(e.target.value));
+    document.getElementById('searchInput').addEventListener('input', e => {
+        filterDocs(e.target.value);
+    });
 
+    // ==================== 分页按钮事件 ====================
+    document.getElementById('prevPage').onclick = () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderCurrentPage();
+        }
+    };
+
+    document.getElementById('nextPage').onclick = () => {
+        const totalPages = Math.ceil(filteredDocs.length / pageSize);
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderCurrentPage();
+        }
+    };
+
+    // ==================== 初始化 ====================
     loadDocs();
 </script>
 </body>
