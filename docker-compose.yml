@@ -64,6 +64,8 @@ services:
   app:
     build: .
     container_name: xx-rag-app
+    volumes:
+      - ./logs:/app/logs
     depends_on:
       mysql:
         condition: service_healthy
@@ -92,3 +94,4 @@ volumes:
   mysql_data:
   es_data:
   rabbitmq_data:
+  logs:
