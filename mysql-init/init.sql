@@ -1,15 +1,14 @@
 -- 创建文档表
-CREATE TABLE rag.rag_documents
+CREATE TABLE IF NOT EXISTS rag.rag_documents
 (
     id         BIGINT AUTO_INCREMENT PRIMARY KEY,
     file_md5   CHAR(32)                           NOT NULL,
     file_name  VARCHAR(255)                       NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP NULL,
-    CONSTRAINT file_md5 UNIQUE (file_md5)
-);
 
--- 为创建时间创建索引
-CREATE INDEX idx_created ON rag.rag_documents (created_at);
+    CONSTRAINT file_md5 UNIQUE (file_md5),
+    INDEX idx_created (created_at)
+);
 
 
 -- 对话会话表
