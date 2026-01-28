@@ -487,6 +487,39 @@
             border-radius: 6px;
             cursor: pointer;
         }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 20vh;
+            z-index: 1000;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            width: 360px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+        }
+
+        .modal-buttons { margin-top: 18px; display:flex; gap:12px; justify-content:center; }
+
+        .modal-btn { padding:8px 18px; border:none; border-radius:6px; cursor:pointer; }
+
+        .modal-cancel { background:#eee; color:#333; }
+
+        .modal-confirm { background:#dc3545; color:white; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
@@ -504,6 +537,8 @@
             <button class="upload-trigger" id="viewDocsTrigger" title="查看文档" aria-label="查看文档"
                     style="margin-right: 8px;">📄
             </button>
+            <button class="upload-trigger" id="newSessionBtn" title="清除会话" aria-label="清除会话" style="margin-right:8px;">🔄</button>
+            <button class="upload-trigger" id="cleanupBtn" title="清理旧记录" aria-label="清理旧记录" style="margin-right:8px;">🧹</button>
             <button class="upload-trigger" id="uploadTrigger" title="上传文档" aria-label="上传文档">↑</button>
         </div>
     </header>
@@ -523,8 +558,89 @@
         <button id="uploadBtn" class="btn-upload">上传文件</button>
     </div>
 </div>
+<!-- 全局确认模态框 -->
+<div id="confirmModal" class="modal" aria-hidden="true">
+    <div class="modal-content">
+        <div id="confirmModalMessage">确认操作？</div>
+        <div id="confirmModalInputWrapper" style="margin-top:12px; display:none;">
+            <input id="confirmModalInput" type="number" min="1" placeholder="天数，例如 30" style="width:100%; padding:8px; box-sizing:border-box;">
+        </div>
+        <div id="confirmModalCheckboxWrapper" style="margin-top:8px; display:none; text-align:left;">
+            <label><input type="checkbox" id="confirmModalCheckbox"> 全部删除（删除整个会话）</label>
+        </div>
+        <div id="confirmModalPasswordWrapper" style="margin-top:12px; display:none;">
+            <input id="confirmModalPassword" type="password" placeholder="请输入管理员密码" style="width:100%; padding:8px; box-sizing:border-box;">
+        </div>
+        <div class="modal-buttons">
+            <button id="confirmModalCancel" class="modal-btn modal-cancel">取消</button>
+            <button id="confirmModalConfirm" class="modal-btn modal-confirm">确定</button>
+        </div>
+    </div>
+</div>
 <div id="toast" class="toast"></div>
 <script>
+    function showModal(options) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('confirmModal');
+            const msgEl = document.getElementById('confirmModalMessage');
+            const inputWrapper = document.getElementById('confirmModalInputWrapper');
+            const inputEl = document.getElementById('confirmModalInput');
+            const checkboxWrapper = document.getElementById('confirmModalCheckboxWrapper');
+            const checkboxEl = document.getElementById('confirmModalCheckbox');
+            const passwordWrapper = document.getElementById('confirmModalPasswordWrapper');
+            const passwordEl = document.getElementById('confirmModalPassword');
+            const btnCancel = document.getElementById('confirmModalCancel');
+            const btnConfirm = document.getElementById('confirmModalConfirm');
+
+            msgEl.textContent = options.message || '';
+            if (options.showInput) {
+                inputWrapper.style.display = 'block';
+                inputEl.placeholder = options.inputPlaceholder || '';
+                inputEl.value = options.inputValue || '';
+                inputEl.focus();
+            } else {
+                inputWrapper.style.display = 'none';
+            }
+            if (options.showCheckbox) {
+                checkboxWrapper.style.display = 'block';
+                checkboxEl.checked = !!options.checkboxChecked;
+            } else {
+                checkboxWrapper.style.display = 'none';
+            }
+            if (options.showPassword) {
+                passwordWrapper.style.display = 'block';
+                passwordEl.value = '';
+                passwordEl.focus();
+            } else {
+                passwordWrapper.style.display = 'none';
+            }
+
+            function cleanup() {
+                modal.classList.remove('active');
+                btnCancel.removeEventListener('click', onCancel);
+                btnConfirm.removeEventListener('click', onConfirm);
+            }
+
+            function onCancel() {
+                cleanup();
+                resolve({ confirmed: false });
+            }
+
+            function onConfirm() {
+                const val = options.showInput ? inputEl.value : null;
+                const allChecked = options.showCheckbox ? checkboxEl.checked : false;
+                const pwd = options.showPassword ? passwordEl.value : null;
+                cleanup();
+                resolve({ confirmed: true, value: val, all: allChecked, password: pwd });
+            }
+
+            btnCancel.addEventListener('click', onCancel);
+            btnConfirm.addEventListener('click', onConfirm);
+
+            modal.classList.add('active');
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         const messagesContainer = document.getElementById('messagesContainer');
         const questionInput = document.getElementById('questionInput');
@@ -532,6 +648,8 @@
         const fileInput = document.getElementById('fileInput');
         const uploadBtn = document.getElementById('uploadBtn');
         const uploadTrigger = document.getElementById('uploadTrigger');
+        const newSessionBtn = document.getElementById('newSessionBtn');
+        const cleanupBtn = document.getElementById('cleanupBtn');
         const timeToggle = document.getElementById('timeToggle');
         const uploadModal = document.getElementById('uploadModal');
         const toast = document.getElementById('toast');
@@ -602,6 +720,12 @@
                 console.warn('从 localStorage 中移除 sid 失败', e);
             }
             showToast('会话已清除', 'success');
+
+            // 清空消息记录
+            messagesContainer.innerHTML = '';
+
+            // 重新连接WebSocket
+            reconnectWebSocket();
         }
 
         function showToast(message, type = 'error') {
@@ -691,6 +815,40 @@
                 console.error('创建WebSocket连接时出错:', e);
                 showToast('创建WebSocket连接失败', 'error');
             }
+        }
+
+        // 优雅重连：关闭现有连接（如果有），然后重新建立连接
+        function reconnectWebSocket() {
+            try {
+                if (ws) {
+                    // 移除事件处理器，避免触发 onclose 的自动重连逻辑
+                    try {
+                        ws.onopen = null;
+                        ws.onmessage = null;
+                        ws.onclose = null;
+                        ws.onerror = null;
+                    } catch (e) {
+                        // ignore
+                    }
+
+                    if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+                        try {
+                            ws.close(1000, 'client_reconnect');
+                        } catch (e) {
+                            console.warn('关闭 WebSocket 时出错', e);
+                        }
+                    }
+                    ws = null;
+                }
+            } catch (e) {
+                console.warn('reconnectWebSocket 出错', e);
+            }
+
+            // 小延迟后重新连接，确保旧连接资源已释放
+            setTimeout(function () {
+                wsReconnectAttempts = 0;
+                connectWebSocket();
+            }, 200);
         }
 
         // 连接WebSocket
@@ -870,6 +1028,80 @@
         uploadTrigger.addEventListener('click', (e) => {
             e.stopPropagation();
             uploadModal.classList.toggle('active');
+        });
+
+        newSessionBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // 弹出模态框：输入要删除的天数或勾选全部删除
+            showModal({ message: '请选择要删除的范围：\n输入天数将删除该会话早于该天数的记录；勾选「全部删除」将删除整个会话记录', showInput: true, showCheckbox: true, inputPlaceholder: '天数，例如 30' })
+                .then(res => {
+                    if (!res.confirmed) return;
+                    const sid = getSessionId();
+                    if (!sid) {
+                        showToast('当前没有会话ID，已清除本地会话', 'success');
+                        clearSession();
+                        return;
+                    }
+
+                    if (res.all) {
+                        // 删除整个会话
+                        fetch('/xx/deleteSession', {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ sessionId: sid })
+                        }).then(r => r.json()).then(data => {
+                            if (data && data.code === 0) {
+                                showToast('服务器会话已删除', 'success');
+                            } else {
+                                showToast('服务器删除失败: ' + (data ? data.message : '未知错误'), 'error');
+                            }
+                        }).catch(err => { console.error(err); showToast('删除失败', 'error'); })
+                            .finally(() => clearSession());
+                    } else {
+                        // 按天数删除
+                        const days = parseInt(res.value, 10);
+                        if (isNaN(days) || days <= 0) {
+                            showToast('请输入正整数天数或勾选全部删除', 'error');
+                            return;
+                        }
+                        const before = new Date(); before.setDate(before.getDate() - days);
+                        const beforeDate = before.toISOString().slice(0, 19);
+                        fetch('/xx/deleteSessionBefore', {
+                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ sessionId: sid, beforeDate })
+                        }).then(r => r.json()).then(data => {
+                            if (data && data.code === 0) {
+                                showToast('已删除当前会话早期记录', 'success');
+                            } else {
+                                showToast('删除失败: ' + (data ? data.message : '未知错误'), 'error');
+                            }
+                        }).catch(err => { console.error(err); showToast('删除失败', 'error'); })
+                            .finally(() => clearSession());
+                    }
+                });
+        });
+
+        cleanupBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            // 管理员操作：需要密码，删除所有会话记录
+            showModal({ message: '确认：此操作将删除所有会话的所有记录。请输入管理员密码以继续。', showPassword: true })
+                .then(res => {
+                    if (!res.confirmed) return;
+                    const pwd = res.password;
+                    if (!pwd || pwd.length === 0) {
+                        showToast('请输入管理员密码', 'error');
+                        return;
+                    }
+                    fetch('/xx/deleteAllSessions', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password: pwd })
+                    }).then(r => r.json()).then(data => {
+                        if (data && data.code === 0) {
+                            showToast('所有会话记录已删除', 'success');
+                        } else {
+                            showToast('删除失败: ' + (data ? data.message : '未知错误'), 'error');
+                        }
+                    }).catch(err => { console.error(err); showToast('删除失败，请稍后重试', 'error'); });
+                });
         });
 
         timeToggle.addEventListener('change', () => {

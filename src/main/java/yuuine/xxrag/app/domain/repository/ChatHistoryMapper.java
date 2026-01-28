@@ -6,7 +6,6 @@ import yuuine.xxrag.app.domain.model.ChatHistory;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// ChatHistoryMapper.java
 @Mapper
 public interface ChatHistoryMapper {
     int save(ChatHistory chatHistory);
@@ -17,4 +16,7 @@ public interface ChatHistoryMapper {
 
     int deleteBySessionIdAndDate(@Param("sessionId") String sessionId,
                                  @Param("beforeDate") LocalDateTime beforeDate);
+
+    // 删除所有历史记录（危险）
+    int deleteAll();
 }
