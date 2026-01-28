@@ -553,49 +553,54 @@
 
         // 会话管理相关变量
         let sessionId = null;
-        const SESSION_ID_COOKIE_NAME = 'chat_session_id';
+        const SID_LOCALSTORAGE_KEY = 'chat_sid';
 
-        // 获取或生成会话ID
+        // 获取或生成会话ID（优先从 localStorage）
         function getSessionId() {
-            if (sessionId) {
-                return sessionId;
+            if (sessionId) return sessionId;
+
+            // 尝试从 localStorage 中读取 sid
+            try {
+                sessionId = localStorage.getItem(SID_LOCALSTORAGE_KEY);
+            } catch (e) {
+                console.warn('读取 localStorage 失败，可能处于隐身模式或被禁用', e);
+                sessionId = null;
             }
 
-            // 从Cookie中获取会话ID
-            sessionId = getCookie(SESSION_ID_COOKIE_NAME);
             if (!sessionId) {
-                // 如果Cookie中没有，则生成新的会话ID
                 sessionId = generateSessionId();
-                // 将会话ID保存到Cookie，设置有效期为7天
-                setCookie(SESSION_ID_COOKIE_NAME, sessionId, 7);
+                try {
+                    localStorage.setItem(SID_LOCALSTORAGE_KEY, sessionId);
+                } catch (e) {
+                    console.warn('写入 localStorage 失败，可能处于隐身模式或被禁用', e);
+                }
             }
 
             return sessionId;
         }
 
-        // 生成随机会话ID
+        // 生成 UUID（优先使用浏览器内置 crypto.randomUUID）
         function generateSessionId() {
-            return 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                return window.crypto.randomUUID();
+            }
+
+            // 回退实现（RFC4122 v4 风格）
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
         }
 
-        // 从Cookie获取值
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
-
-        // 设置Cookie
-        function setCookie(name, value, days) {
-            const expires = new Date();
-            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
-        }
-
-        // 清除会话
+        // 清除会话（移除 localStorage 中的 sid）
         function clearSession() {
             sessionId = null;
-            document.cookie = `${SESSION_ID_COOKIE_NAME}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+            try {
+                localStorage.removeItem(SID_LOCALSTORAGE_KEY);
+            } catch (e) {
+                console.warn('从 localStorage 中移除 sid 失败', e);
+            }
             showToast('会话已清除', 'success');
         }
 
@@ -611,11 +616,11 @@
                 return;
             }
 
-            // 获取会话ID
+            // 获取会话ID（使用 sid 查询参数，localStorage 中持久化）
             const currentSessionId = getSessionId();
 
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws-chat?sessionId=${currentSessionId}`;
+            const wsUrl = `${protocol}//${window.location.host}/ws-chat?sid=${currentSessionId}`;
 
             try {
                 ws = new WebSocket(wsUrl);
@@ -1007,3 +1012,4 @@
 </script>
 </body>
 </html>
+

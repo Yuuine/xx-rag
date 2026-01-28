@@ -1,10 +1,12 @@
 package yuuine.xxrag.app.application.service;
 
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.modulith.NamedInterface;
 import org.springframework.stereotype.Service;
+import yuuine.xxrag.app.config.ChatHistoryProperties;
 import yuuine.xxrag.app.domain.model.ChatHistory;
 import yuuine.xxrag.app.domain.model.ChatSession;
 import yuuine.xxrag.app.domain.repository.ChatHistoryMapper;
@@ -12,6 +14,7 @@ import yuuine.xxrag.app.domain.repository.ChatSessionMapper;
 import yuuine.xxrag.dto.request.InferenceRequest;
 
 import jakarta.annotation.PreDestroy;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +24,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * 基于 Cookie + Session 的对话历史管理服务
@@ -68,17 +72,19 @@ public class ChatSessionService {
 
     private final ChatSessionMapper chatSessionMapper;
     private final ChatHistoryMapper chatHistoryMapper;
+    private final ChatHistoryProperties chatHistoryProperties;
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
 
     public ChatSessionService(ChatSessionMapper chatSessionMapper, ChatHistoryMapper chatHistoryMapper) {
         this.chatSessionMapper = chatSessionMapper;
         this.chatHistoryMapper = chatHistoryMapper;
+        this.chatHistoryProperties = new ChatHistoryProperties();
     }
 
     // 在构造完成后启动定时任务
     {
-        scheduler.scheduleAtFixedRate(this::flushPendingSessions, 30, 30, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(this::flushPendingSessions, 60, 120, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(this::cleanupExpiredSessions, 5, 5, TimeUnit.MINUTES);
     }
 
@@ -107,10 +113,6 @@ public class ChatSessionService {
 
     public void addAssistantMessage(String sessionId, String content) {
         addMessageToSession(sessionId, "assistant", content);
-    }
-
-    public void addSystemMessage(String sessionId, String content) {
-        addMessageToSession(sessionId, "system", content);
     }
 
     public synchronized void flushSession(String sessionId) {
@@ -172,11 +174,22 @@ public class ChatSessionService {
         // 缓存部分同步读取，避免并发修改时的结构不一致
         SessionCache session = sessionCache.get(sessionId);
         if (session != null) {
+            List<ChatHistory> cachedMessages;
             synchronized (this) {
-                for (ChatHistory cached : session.getPendingMessages()) {
-                    messages.add(new InferenceRequest.Message(cached.getRole(), cached.getContent()));
-                }
+                cachedMessages = new ArrayList<>(session.getPendingMessages());
             }
+            for (ChatHistory cached : cachedMessages) {
+                messages.add(new InferenceRequest.Message(cached.getRole(), cached.getContent()));
+            }
+        }
+
+        // 限制返回的历史消息数量，只返回最近的n条消息
+        int maxHistoryMessages = chatHistoryProperties.getMaxHistoryMessages();
+        if (messages.size() > maxHistoryMessages) {
+            // 只保留最近的maxHistoryMessages条消息
+            messages = messages.stream()
+                    .skip(Math.max(0, messages.size() - maxHistoryMessages))
+                    .collect(Collectors.toList());
         }
 
         return messages;

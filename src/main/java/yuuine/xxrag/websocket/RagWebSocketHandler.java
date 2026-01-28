@@ -15,6 +15,9 @@ import jakarta.websocket.server.ServerEndpoint;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Component
 @ServerEndpoint("/ws-chat")
@@ -167,16 +170,71 @@ public class RagWebSocketHandler implements ApplicationContextAware {
 
     /**
      * 生成或获取会话ID
-     * 从WebSocket握手参数中获取，如果没有则生成新的
+     * 优先从 WebSocket 握手请求的查询参数中读取 sid（兼容带短横线和不带短横线的 UUID），
+     * 如果提供且合法则使用该 sid，否则生成新的无短横线 UUID；
+     * 这样同一浏览器（使用 localStorage 保存 sid）打开的多个标签页可共享同一 businessSessionId。
      */
     private String generateOrGetSessionId(Session session) {
-        // 从握手参数中尝试获取会话ID
-        String sessionId;
-        // 如果没有获取到，则生成一个新的UUID
-        sessionId = java.util.UUID.randomUUID().toString().replace("-", "");
-        log.debug("生成新会话ID: {}", sessionId);
+        try {
+            // 尝试从请求参数中获取 sid（query string 参数）
+            Map<String, List<String>> paramMap = session.getRequestParameterMap();
+            if (paramMap != null) {
+                List<String> sidList = paramMap.get("sid");
+                if (sidList != null && !sidList.isEmpty()) {
+                    String rawSid = sidList.get(0);
+                    String normalized = normalizeAndValidateUuid(rawSid);
+                    if (normalized != null) {
+                        String dashless = normalized.replace("-", "");
+                        log.debug("使用客户端提供的会话ID (normalized): {} -> stored as: {}", normalized, dashless);
+                        return dashless;
+                    } else {
+                        log.warn("客户端提供的 sid 无效，将生成新的会话ID: {}", rawSid);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("尝试从请求参数读取 sid 时发生异常，将生成新的会话ID", e);
+        }
 
-        return sessionId;
+        // 如果没有可用的 sid，则生成一个新的无短横线 UUID
+        String generated = UUID.randomUUID().toString().replace("-", "");
+        log.debug("生成新会话ID: {}", generated);
+        return generated;
+    }
+
+    /**
+     * 验证并规范化 UUID 字符串：
+     * - 支持带短横线的标准 UUID（8-4-4-4-12）
+     * - 支持不带短横线的 32 个十六进制字符形式
+     */
+    private String normalizeAndValidateUuid(String s) {
+        if (s == null) return null;
+        String trimmed = s.trim();
+        if (trimmed.isEmpty()) return null;
+
+        // 如果是 32 长度的十六进制字符串，插入短横线
+        if (trimmed.length() == 32 && trimmed.matches("[0-9a-fA-F]{32}")) {
+            String withDashes = trimmed.replaceFirst("^([0-9a-fA-F]{8})([0-9a-fA-F]{4})([0-9a-fA-F]{4})([0-9a-fA-F]{4})([0-9a-fA-F]{12})$",
+                    "$1-$2-$3-$4-$5");
+            try {
+                UUID.fromString(withDashes);
+                return withDashes.toLowerCase();
+            } catch (IllegalArgumentException ignored) {
+                return null;
+            }
+        }
+
+        // 如果看起来已经是带短横线的 UUID，直接尝试解析
+        if (trimmed.length() == 36) {
+            try {
+                UUID.fromString(trimmed);
+                return trimmed.toLowerCase();
+            } catch (IllegalArgumentException ignored) {
+                return null;
+            }
+        }
+
+        return null;
     }
 
     /**

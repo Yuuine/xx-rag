@@ -23,4 +23,8 @@ public class ChatHistoryProperties {
      * 是否启用数据库持久化
      */
     private boolean persistenceEnabled = true;
+    /**
+     * 最大历史消息数量 - 单次请求返回的最大历史消息数
+     */
+    private int maxHistoryMessages = 10;
 }
