@@ -16,4 +16,7 @@ public interface ChatSessionMapper {
                                   @Param("updatedAt") LocalDateTime updatedAt);
 
     void deleteSession(String sessionId);
+
+    // 删除所有会话记录
+    void deleteAll();
 }

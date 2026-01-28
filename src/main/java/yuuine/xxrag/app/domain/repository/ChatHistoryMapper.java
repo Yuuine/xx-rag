@@ -17,4 +17,10 @@ public interface ChatHistoryMapper {
 
     int deleteBySessionIdAndDate(@Param("sessionId") String sessionId,
                                  @Param("beforeDate") LocalDateTime beforeDate);
+
+    // 删除所有会话中在 beforeDate 之前的消息
+    int deleteByDate(@Param("beforeDate") LocalDateTime beforeDate);
+
+    // 删除所有历史记录（危险）
+    int deleteAll();
 }

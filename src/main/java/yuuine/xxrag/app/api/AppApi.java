@@ -5,6 +5,7 @@ import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.dto.common.Result;
 
 import java.util.List;
+import java.time.LocalDateTime;
 
 @NamedInterface("app-api")
 public interface AppApi {
@@ -28,4 +29,24 @@ public interface AppApi {
      * WebSocket流式搜索
      */
     void streamSearch(String query, String userDestination);
+
+    /**
+     * 删除某个会话及其所有历史（数据库 & 内存缓存）
+     */
+    Result<Object> deleteSession(String sessionId);
+
+    /**
+     * 删除某个会话在指定日期之前的消息
+     */
+    Result<Object> deleteSessionBefore(String sessionId, LocalDateTime beforeDate);
+
+    /**
+     * 删除所有会话历史
+     */
+    Result<Object> deleteAllSessions();
+
+    /**
+     * 删除所有会话中在 beforeDate 之前的历史（全局清理）
+     */
+    Result<Object> deleteAllSessionsBefore(LocalDateTime beforeDate);
 }

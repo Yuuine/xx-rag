@@ -33,4 +33,8 @@
         WHERE session_id = #{sessionId}
     </delete>
 
+    <delete id="deleteAll">
+        DELETE FROM rag_sessions
+    </delete>
+
 </mapper>
