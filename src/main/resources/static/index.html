@@ -551,6 +551,59 @@
         let timeoutId = null; // 超时计时器ID
         const TIMEOUT_DURATION = 6 * 60 * 10000; // 60分钟超时
 
+        // 会话管理相关变量
+        let sessionId = null;
+        const SID_LOCALSTORAGE_KEY = 'chat_sid';
+
+        // 获取或生成会话ID（优先从 localStorage）
+        function getSessionId() {
+            if (sessionId) return sessionId;
+
+            // 尝试从 localStorage 中读取 sid
+            try {
+                sessionId = localStorage.getItem(SID_LOCALSTORAGE_KEY);
+            } catch (e) {
+                console.warn('读取 localStorage 失败，可能处于隐身模式或被禁用', e);
+                sessionId = null;
+            }
+
+            if (!sessionId) {
+                sessionId = generateSessionId();
+                try {
+                    localStorage.setItem(SID_LOCALSTORAGE_KEY, sessionId);
+                } catch (e) {
+                    console.warn('写入 localStorage 失败，可能处于隐身模式或被禁用', e);
+                }
+            }
+
+            return sessionId;
+        }
+
+        // 生成 UUID（优先使用浏览器内置 crypto.randomUUID）
+        function generateSessionId() {
+            if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                return window.crypto.randomUUID();
+            }
+
+            // 回退实现（RFC4122 v4 风格）
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // 清除会话（移除 localStorage 中的 sid）
+        function clearSession() {
+            sessionId = null;
+            try {
+                localStorage.removeItem(SID_LOCALSTORAGE_KEY);
+            } catch (e) {
+                console.warn('从 localStorage 中移除 sid 失败', e);
+            }
+            showToast('会话已清除', 'success');
+        }
+
         function showToast(message, type = 'error') {
             toast.textContent = message;
             toast.className = 'toast ' + type;
@@ -563,14 +616,17 @@
                 return;
             }
 
+            // 获取会话ID（使用 sid 查询参数，localStorage 中持久化）
+            const currentSessionId = getSessionId();
+
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws-chat`;
+            const wsUrl = `${protocol}//${window.location.host}/ws-chat?sid=${currentSessionId}`;
 
             try {
                 ws = new WebSocket(wsUrl);
 
                 ws.onopen = function (event) {
-                    console.log('WebSocket连接已建立');
+                    console.log('WebSocket连接已建立，会话ID:', currentSessionId);
                     wsReconnectAttempts = 0; // 重置重连计数
                     showToast('WebSocket连接已建立', 'success');
                 };
@@ -956,3 +1012,4 @@
 </script>
 </body>
 </html>
+
