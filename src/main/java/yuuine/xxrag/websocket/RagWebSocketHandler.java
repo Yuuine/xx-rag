@@ -7,6 +7,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 import yuuine.xxrag.app.api.AppApi;
+import yuuine.xxrag.app.application.service.ChatSessionService;
 import yuuine.xxrag.dto.response.StreamResponse;
 
 import jakarta.websocket.*;
@@ -21,11 +22,14 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class RagWebSocketHandler implements ApplicationContextAware {
 
     private static AppApi appApi;
-    
+    private static ChatSessionService chatSessionService;
+
     // 存储所有连接的会话
     private static final CopyOnWriteArraySet<RagWebSocketHandler> webSocketSet = new CopyOnWriteArraySet<>();
     // 存储会话ID与处理器实例的映射关系
     private static final ConcurrentHashMap<String, RagWebSocketHandler> sessionMap = new ConcurrentHashMap<>();
+    // 存储WebSocket会话与业务会话ID的映射关系
+    private static final ConcurrentHashMap<String, String> webSocketToBusinessSessionMap = new ConcurrentHashMap<>();
 
     private Session session;
 
@@ -35,6 +39,7 @@ public class RagWebSocketHandler implements ApplicationContextAware {
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         RagWebSocketHandler.appApi = applicationContext.getBean(AppApi.class);
+        RagWebSocketHandler.chatSessionService = applicationContext.getBean(ChatSessionService.class);
     }
 
     /**
@@ -45,7 +50,13 @@ public class RagWebSocketHandler implements ApplicationContextAware {
         this.session = session;
         webSocketSet.add(this);
         sessionMap.put(session.getId(), this);
-        log.info("新的WebSocket连接，当前连接数: {}", webSocketSet.size());
+
+        // 生成或获取业务会话ID
+        String businessSessionId = generateOrGetSessionId(session);
+        webSocketToBusinessSessionMap.put(session.getId(), businessSessionId);
+
+        log.info("新的WebSocket连接，WebSocket ID: {}, 业务Session ID: {}，当前连接数: {}",
+                session.getId(), businessSessionId, webSocketSet.size());
     }
 
     /**
@@ -53,9 +64,13 @@ public class RagWebSocketHandler implements ApplicationContextAware {
      */
     @OnClose
     public void onClose() {
+        String webSocketId = this.session.getId();
+        String businessSessionId = webSocketToBusinessSessionMap.remove(webSocketId);
         webSocketSet.remove(this);
-        sessionMap.remove(this.session.getId());
-        log.info("WebSocket连接关闭，当前连接数: {}", webSocketSet.size());
+        sessionMap.remove(webSocketId);
+
+        log.info("WebSocket连接关闭，WebSocket ID: {}, 业务Session ID: {}，当前连接数: {}",
+                webSocketId, businessSessionId, webSocketSet.size());
     }
 
     /**
@@ -64,8 +79,17 @@ public class RagWebSocketHandler implements ApplicationContextAware {
     @OnMessage
     public void onMessage(String message, Session session) {
         log.info("来自客户端的消息: {}", message);
-        
+
+        String businessSessionId = webSocketToBusinessSessionMap.get(session.getId());
+        if (businessSessionId == null) {
+            log.error("未找到业务会话ID，WebSocket ID: {}", session.getId());
+            return;
+        }
+
         try {
+            // 将用户消息添加到会话历史
+            chatSessionService.addUserMessage(businessSessionId, message);
+
             // 使用AppApi处理流式搜索
             if (appApi == null) {
                 sendToSession(session, StreamResponse.builder()
@@ -92,7 +116,8 @@ public class RagWebSocketHandler implements ApplicationContextAware {
      */
     @OnError
     public void onError(Session session, Throwable error) {
-        log.error("WebSocket发生错误", error);
+        String businessSessionId = webSocketToBusinessSessionMap.get(session.getId());
+        log.error("WebSocket发生错误，WebSocket ID: {}, 业务Session ID: {}", session.getId(), businessSessionId, error);
     }
 
     /**
@@ -138,5 +163,26 @@ public class RagWebSocketHandler implements ApplicationContextAware {
                 log.error("广播消息失败", e);
             }
         }
+    }
+
+    /**
+     * 生成或获取会话ID
+     * 从WebSocket握手参数中获取，如果没有则生成新的
+     */
+    private String generateOrGetSessionId(Session session) {
+        // 从握手参数中尝试获取会话ID
+        String sessionId;
+        // 如果没有获取到，则生成一个新的UUID
+        sessionId = java.util.UUID.randomUUID().toString().replace("-", "");
+        log.debug("生成新会话ID: {}", sessionId);
+
+        return sessionId;
+    }
+
+    /**
+     * 获取业务会话ID
+     */
+    public static String getBusinessSessionId(String webSocketSessionId) {
+        return webSocketToBusinessSessionMap.get(webSocketSessionId);
     }
 }

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="yuuine.xxrag.app.domain.repository.ChatHistoryMapper">
+
+    <resultMap id="ChatHistoryResultMap" type="yuuine.xxrag.app.domain.model.ChatHistory">
+        <id property="id" column="id"/>
+        <result property="sessionId" column="session_id"/>
+        <result property="role" column="role"/>
+        <result property="content" column="content"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <insert id="save" parameterType="yuuine.xxrag.app.domain.model.ChatHistory"
+            useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO rag_chat_history (session_id, role, content, created_at)
+        VALUES (#{sessionId}, #{role}, #{content}, #{createdAt})
+    </insert>
+
+    <select id="findBySessionId" parameterType="string" resultMap="ChatHistoryResultMap">
+        SELECT *
+        FROM rag_chat_history
+        WHERE session_id = #{sessionId}
+        ORDER BY created_at
+    </select>
+
+    <delete id="deleteBySessionId" parameterType="string">
+        DELETE
+        FROM rag_chat_history
+        WHERE session_id = #{sessionId}
+    </delete>
+
+    <delete id="deleteBySessionIdAndDate">
+        DELETE
+        FROM rag_chat_history
+        WHERE session_id = #{sessionId}
+          AND created_at &lt; #{beforeDate}
+    </delete>
+
+</mapper>

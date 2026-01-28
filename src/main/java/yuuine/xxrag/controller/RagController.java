@@ -8,7 +8,6 @@ import yuuine.xxrag.app.api.AppApi;
 import yuuine.xxrag.dto.common.Result;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @RequiredArgsConstructor
 @RestController

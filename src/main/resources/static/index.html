@@ -551,6 +551,54 @@
         let timeoutId = null; // 超时计时器ID
         const TIMEOUT_DURATION = 6 * 60 * 10000; // 60分钟超时
 
+        // 会话管理相关变量
+        let sessionId = null;
+        const SESSION_ID_COOKIE_NAME = 'chat_session_id';
+
+        // 获取或生成会话ID
+        function getSessionId() {
+            if (sessionId) {
+                return sessionId;
+            }
+
+            // 从Cookie中获取会话ID
+            sessionId = getCookie(SESSION_ID_COOKIE_NAME);
+            if (!sessionId) {
+                // 如果Cookie中没有，则生成新的会话ID
+                sessionId = generateSessionId();
+                // 将会话ID保存到Cookie，设置有效期为7天
+                setCookie(SESSION_ID_COOKIE_NAME, sessionId, 7);
+            }
+
+            return sessionId;
+        }
+
+        // 生成随机会话ID
+        function generateSessionId() {
+            return 'sess_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // 从Cookie获取值
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        // 设置Cookie
+        function setCookie(name, value, days) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+        }
+
+        // 清除会话
+        function clearSession() {
+            sessionId = null;
+            document.cookie = `${SESSION_ID_COOKIE_NAME}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+            showToast('会话已清除', 'success');
+        }
+
         function showToast(message, type = 'error') {
             toast.textContent = message;
             toast.className = 'toast ' + type;
@@ -563,14 +611,17 @@
                 return;
             }
 
+            // 获取会话ID
+            const currentSessionId = getSessionId();
+
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws-chat`;
+            const wsUrl = `${protocol}//${window.location.host}/ws-chat?sessionId=${currentSessionId}`;
 
             try {
                 ws = new WebSocket(wsUrl);
 
                 ws.onopen = function (event) {
-                    console.log('WebSocket连接已建立');
+                    console.log('WebSocket连接已建立，会话ID:', currentSessionId);
                     wsReconnectAttempts = 0; // 重置重连计数
                     showToast('WebSocket连接已建立', 'success');
                 };

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="yuuine.xxrag.app.domain.repository.ChatSessionMapper">
+
+    <resultMap id="ChatSessionResultMap" type="yuuine.xxrag.app.domain.model.ChatSession">
+        <id property="sessionId" column="session_id"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="saveOrUpdateSession" parameterType="yuuine.xxrag.app.domain.model.ChatSession">
+        INSERT INTO rag_sessions (session_id, created_at, updated_at)
+        VALUES (#{sessionId}, #{createdAt}, #{updatedAt})
+        ON DUPLICATE KEY UPDATE updated_at = #{updatedAt}
+    </insert>
+
+    <select id="findBySessionId" parameterType="string" resultMap="ChatSessionResultMap">
+        SELECT *
+        FROM rag_sessions
+        WHERE session_id = #{sessionId}
+    </select>
+
+    <update id="updateSessionUpdatedTime">
+        UPDATE rag_sessions
+        SET updated_at = #{updatedAt}
+        WHERE session_id = #{sessionId}
+    </update>
+
+    <delete id="deleteSession" parameterType="string">
+        DELETE
+        FROM rag_sessions
+        WHERE session_id = #{sessionId}
+    </delete>
+
+</mapper>

@@ -77,6 +77,11 @@ app:
   text-chunker:
     chunk-size: 512               # 文本分块大小
     overlap: 100                  # 文本分块重叠大小
+  chat:
+    history:
+      flush-threshold: 10           # 历史记录缓存阈值（条数）
+      session-expiry-minutes: 30    # 会话过期时间（分钟）
+      persistence-enabled: true     # 是否启用会话持久化
 
 
 mybatis:
