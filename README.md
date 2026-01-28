@@ -5,7 +5,7 @@
 ## 配置文件
 
 在 `src/main/resources/application.yml` 中配置：
-
+**核心配置项**
 ```yaml
 rag:
   prompt:
@@ -26,6 +26,12 @@ app:
   text-chunker:
     chunk-size: 512               # 文本分块大小
     overlap: 100                  # 文本分块重叠大小
+  chat:
+    history:
+      flush-threshold: 10           # 历史记录缓存阈值（条数）
+      session-expiry-minutes: 30    # 会话过期时间（分钟）
+      persistence-enabled: true     # 是否启用会话持久化
+      max-history-messages: 10      # 每次返回给模型的最大历史消息数
 ```
 
 ## API 接口
@@ -136,6 +142,7 @@ chmod +x hot-update.sh
 - **智能文档处理**：自动将文档分割成块（chunk），提取文本内容
 - **向量检索**：使用 Elasticsearch 作为向量数据库，支持混合检索
 - **智能问答**：集成 LLM 模型，提供基于文档内容的智能问答
+- **会话管理**：支持多轮对话，保持上下文关联
 - **文件管理**：支持文档上传、删除、列表查看等功能
 
 ## 技术栈
@@ -172,19 +179,40 @@ MySQL
 
 rag.rag_documents
 ```mysql
-create table rag.rag_documents
+-- 文档表
+CREATE TABLE rag.rag_documents
 (
-    id         bigint auto_increment
-        primary key,
-    file_md5   char(32)                           not null,
-    file_name  varchar(255)                       not null,
-    created_at datetime default CURRENT_TIMESTAMP null,
-    constraint file_md5
-        unique (file_md5)
+    id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+    file_md5   CHAR(32)                           NOT NULL,
+    file_name  VARCHAR(255)                       NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP NULL,
+    CONSTRAINT file_md5 UNIQUE (file_md5)
 );
-
-create index idx_created
-    on rag.rag_documents (created_at);
+CREATE INDEX idx_created ON rag.rag_documents (created_at);
+```
+rag.rag_sessions
+```mysql
+-- 会话表
+CREATE TABLE IF NOT EXISTS rag_sessions
+(
+    session_id VARCHAR(64) PRIMARY KEY,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_updated_at (updated_at)
+);
+```
+rag.rag_chat_history
+```mysql
+-- 对话记录表
+CREATE TABLE IF NOT EXISTS rag_chat_history
+(
+    id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+    session_id VARCHAR(64)                          NOT NULL,
+    role       ENUM ('user', 'assistant', 'system') NOT NULL,
+    content    TEXT                                 NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_session_created (session_id, created_at)
+);
 ```
 
 Elasticsearch
@@ -247,3 +275,4 @@ rag_chunks
 - 通用文档检测与提取库 [Apache Tika](https://github.com/apache/tika)
 - PDF文档处理库 [Apache PDFBox](https://github.com/apache/pdfbox)
 - Microsoft 文档处理库 [Apache POI](https://github.com/apache/poi)
+- RabbitMQ 消息队列服务 [RabbitMQ](https://www.rabbitmq.com/)
