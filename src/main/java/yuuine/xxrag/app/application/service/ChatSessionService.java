@@ -228,13 +228,8 @@ public class ChatSessionService {
     }
 
     public void deleteSession(String sessionId) {
-        // 清空内存（加锁保护）
-        synchronized (this) {
-            SessionCache session = sessionCache.get(sessionId);
-            if (session != null) {
-                session.getPendingMessages().clear();
-            }
-        }
+        // 清除缓存
+        clearSessionCache(sessionId);
 
         // 删除数据库记录
         chatHistoryMapper.deleteBySessionId(sessionId);
@@ -244,6 +239,7 @@ public class ChatSessionService {
 
         log.debug("会话 {} 及其所有历史已删除", sessionId);
     }
+
 
     /**
      * 危险操作：删除所有会话及其历史（数据库全部清空）
@@ -287,29 +283,6 @@ public class ChatSessionService {
 
         if (cleaned.get() > 0) {
             log.info("本次过期会话清理移除 {} 个会话", cleaned.get());
-        }
-    }
-
-    /**
-     * 删除全局所有会话中在 beforeDate 之前的历史记录（数据库）。
-     * 会同时清理内存中的过期缓存。
-     */
-    public void deleteAllSessionsBefore(LocalDateTime beforeDate) {
-        if (beforeDate == null) return;
-        // 清理内存缓存中早于 beforeDate 的消息
-        for (SessionCache session : sessionCache.values()) {
-            synchronized (this) {
-                session.getPendingMessages().removeIf(msg -> msg.getCreatedAt().isBefore(beforeDate));
-            }
-        }
-
-        // 删除数据库中早于 beforeDate 的历史
-        try {
-            chatHistoryMapper.deleteByDate(beforeDate);
-            log.info("已删除所有会话中 {} 之前的历史记录", beforeDate);
-        } catch (Exception e) {
-            log.error("删除全局历史失败", e);
-            throw e;
         }
     }
 

@@ -79,14 +79,4 @@ public class AppApiImpl implements AppApi {
         }
     }
 
-    @Override
-    public Result<Object> deleteAllSessionsBefore(java.time.LocalDateTime beforeDate) {
-        try {
-            chatSessionService.deleteAllSessionsBefore(beforeDate);
-            return Result.success();
-        } catch (Exception e) {
-            log.error("按日期全局删除会话历史失败", e);
-            return Result.error("按日期全局删除会话历史失败");
-        }
-    }
 }

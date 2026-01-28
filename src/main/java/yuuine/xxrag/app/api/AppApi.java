@@ -44,9 +44,4 @@ public interface AppApi {
      * 删除所有会话历史
      */
     Result<Object> deleteAllSessions();
-
-    /**
-     * 删除所有会话中在 beforeDate 之前的历史（全局清理）
-     */
-    Result<Object> deleteAllSessionsBefore(LocalDateTime beforeDate);
 }

@@ -37,12 +37,6 @@
           AND created_at &lt; #{beforeDate}
     </delete>
 
-    <delete id="deleteByDate">
-        DELETE
-        FROM rag_chat_history
-        WHERE created_at &lt; #{beforeDate}
-    </delete>
-
     <delete id="deleteAll">
         DELETE FROM rag_chat_history
     </delete>

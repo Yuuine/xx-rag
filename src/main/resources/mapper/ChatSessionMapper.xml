@@ -15,18 +15,6 @@
         ON DUPLICATE KEY UPDATE updated_at = #{updatedAt}
     </insert>
 
-    <select id="findBySessionId" parameterType="string" resultMap="ChatSessionResultMap">
-        SELECT *
-        FROM rag_sessions
-        WHERE session_id = #{sessionId}
-    </select>
-
-    <update id="updateSessionUpdatedTime">
-        UPDATE rag_sessions
-        SET updated_at = #{updatedAt}
-        WHERE session_id = #{sessionId}
-    </update>
-
     <delete id="deleteSession" parameterType="string">
         DELETE
         FROM rag_sessions
