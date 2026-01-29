@@ -75,10 +75,10 @@ public class ChatSessionService {
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
 
-    public ChatSessionService(ChatSessionMapper chatSessionMapper, ChatHistoryMapper chatHistoryMapper) {
+    public ChatSessionService(ChatSessionMapper chatSessionMapper, ChatHistoryMapper chatHistoryMapper, ChatHistoryProperties chatHistoryProperties) {
         this.chatSessionMapper = chatSessionMapper;
         this.chatHistoryMapper = chatHistoryMapper;
-        this.chatHistoryProperties = new ChatHistoryProperties();
+        this.chatHistoryProperties = chatHistoryProperties;
     }
 
     // 在构造完成后启动定时任务
@@ -162,6 +162,35 @@ public class ChatSessionService {
     }
 
     public List<InferenceRequest.Message> getSessionHistory(String sessionId) {
+        List<InferenceRequest.Message> messages = collectSessionMessages(sessionId);
+
+        // 限制返回的历史消息数量，只返回最近的配置值条消息
+        int maxHistoryMessages = chatHistoryProperties.getMaxHistoryMessages();
+        if (messages.size() > maxHistoryMessages) {
+            messages = messages.stream()
+                    .skip(Math.max(0, messages.size() - maxHistoryMessages))
+                    .collect(Collectors.toList());
+        }
+
+        return messages;
+    }
+
+    // 允许调用方指定最大返回数量
+    public List<InferenceRequest.Message> getSessionHistory(String sessionId, int maxMessages) {
+        List<InferenceRequest.Message> messages = collectSessionMessages(sessionId);
+
+        // 限制返回的历史消息数量，只返回最近的 maxMessages 条消息
+        if (maxMessages > 0 && messages.size() > maxMessages) {
+            messages = messages.stream()
+                    .skip(Math.max(0, messages.size() - maxMessages))
+                    .collect(Collectors.toList());
+        }
+
+        return messages;
+    }
+
+    // 公共方法：从数据库和内存缓存收集会话消息（按时间顺序：数据库旧->新，缓存在后）
+    private List<InferenceRequest.Message> collectSessionMessages(String sessionId) {
         List<InferenceRequest.Message> messages = new ArrayList<>();
 
         // 数据库部分
@@ -182,16 +211,13 @@ public class ChatSessionService {
             }
         }
 
-        // 限制返回的历史消息数量，只返回最近的n条消息
-        int maxHistoryMessages = chatHistoryProperties.getMaxHistoryMessages();
-        if (messages.size() > maxHistoryMessages) {
-            // 只保留最近的maxHistoryMessages条消息
-            messages = messages.stream()
-                    .skip(Math.max(0, messages.size() - maxHistoryMessages))
-                    .collect(Collectors.toList());
-        }
 
         return messages;
+    }
+
+    // 返回配置文件中的历史回显数量（UI 显示）
+    public int getMaxHistoryEchoMessages() {
+        return chatHistoryProperties != null ? chatHistoryProperties.getMaxHistoryEchoMessages() : 20;
     }
 
     public void clearSessionCache(String sessionId) {

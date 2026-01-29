@@ -24,7 +24,12 @@ public class ChatHistoryProperties {
      */
     private boolean persistenceEnabled = true;
     /**
-     * 最大历史消息数量 - 单次请求返回的最大历史消息数
+     * 最大历史消息数量 - 单次请求返回的最大历史消息数（用于发送给模型，防止 token 爆炸）
      */
     private int maxHistoryMessages = 10;
+
+    /**
+     * 历史回显数量 - 首次连接时向前端回显的历史消息条数（UI 展示）
+     */
+    private int maxHistoryEchoMessages = 20;
 }
