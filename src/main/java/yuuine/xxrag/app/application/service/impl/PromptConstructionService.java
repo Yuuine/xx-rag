@@ -88,26 +88,13 @@ public class PromptConstructionService {
     /**
      * 构建意图判断提示词
      */
-    public String buildIntentDetectionPrompt(String query) {
+    public String buildIntentDetectionPrompt() {
         return """
                 请判断以下用户输入属于哪一类意图：
                 知识查询：用户希望获取事实、操作步骤、定义、解释等具体信息。
                 闲聊：用户进行问候、情感表达、无明确信息需求的对话。
+                用户输入：%s
                 你只需返回"闲聊"或者"知识查询"，不要返回除了这两个词语以外的任何内容。
                 """;
-    }
-
-    /**
-     * 获取知识系统提示词
-     */
-    public String getKnowledgeSystemPrompt() {
-        return ragPromptProperties.getKnowledgeSystemPrompt();
-    }
-
-    /**
-     * 获取普通系统提示词
-     */
-    public String getOrdinarySystemPrompt() {
-        return ragPromptProperties.getOrdinarySystemPrompt();
     }
 }

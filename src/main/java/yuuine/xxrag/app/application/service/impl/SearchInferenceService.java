@@ -151,7 +151,7 @@ public class SearchInferenceService {
 
     // 意图判断逻辑
     private String determineQueryType(String query) {
-        String intentPrompt = promptConstructionService.buildIntentDetectionPrompt(query);
+        String intentPrompt = promptConstructionService.buildIntentDetectionPrompt();
 
         try {
             InferenceRequest intentRequest = new InferenceRequest();
