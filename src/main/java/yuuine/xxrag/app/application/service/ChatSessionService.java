@@ -1,5 +1,7 @@
 package yuuine.xxrag.app.application.service;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,16 +14,11 @@ import yuuine.xxrag.app.domain.repository.ChatHistoryMapper;
 import yuuine.xxrag.app.domain.repository.ChatSessionMapper;
 import yuuine.xxrag.dto.request.InferenceRequest;
 
-import jakarta.annotation.PreDestroy;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -42,9 +39,10 @@ public class ChatSessionService {
     @Data
     public static class SessionCache {
         private final String sessionId;
-        private final List<ChatHistory> pendingMessages = new ArrayList<>();
-        private LocalDateTime lastAccessTime;
+        private final List<ChatHistory> pendingMessages = new CopyOnWriteArrayList<>();
+        private volatile LocalDateTime lastAccessTime;
         private final LocalDateTime createdAt;
+        private final Object lock = new Object();  // 每个会话独立锁
 
         public SessionCache(String sessionId) {
             this.sessionId = sessionId;
@@ -64,6 +62,10 @@ public class ChatSessionService {
         public boolean isExpired(int expiryMinutes) {
             return lastAccessTime.isBefore(LocalDateTime.now().minusMinutes(expiryMinutes));
         }
+
+        public void updateLastAccessTime() {
+            lastAccessTime = LocalDateTime.now();
+        }
     }
 
     private final Map<String, SessionCache> sessionCache = new ConcurrentHashMap<>();
@@ -80,8 +82,8 @@ public class ChatSessionService {
         this.chatHistoryProperties = chatHistoryProperties;
     }
 
-    // 在构造完成后启动定时任务
-    {
+    @PostConstruct
+    public void init() {
         scheduler.scheduleAtFixedRate(this::flushPendingSessions, 60, 120, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(this::cleanupExpiredSessions, 5, 5, TimeUnit.MINUTES);
     }
@@ -94,7 +96,7 @@ public class ChatSessionService {
         SessionCache session = getSession(sessionId);
         ChatHistory message = new ChatHistory(null, sessionId, role, content, LocalDateTime.now());
 
-        synchronized (this) {
+        synchronized (session.getLock()) {
             session.addPendingMessage(message);
         }
 
@@ -113,26 +115,37 @@ public class ChatSessionService {
         addMessageToSession(sessionId, "assistant", content);
     }
 
-    public synchronized void flushSession(String sessionId) {
+    public void flushSession(String sessionId) {
         SessionCache session = sessionCache.get(sessionId);
-        if (session == null || session.getPendingMessages().isEmpty()) {
+        if (session == null) {
             return;
+        }
+
+        List<ChatHistory> messagesToFlush;
+        synchronized (session.getLock()) {
+            if (session.getPendingMessages().isEmpty()) {
+                return;
+            }
+            messagesToFlush = new ArrayList<>(session.getPendingMessages());
+            session.getPendingMessages().clear();
         }
 
         try {
             ChatSession dbSession = new ChatSession(sessionId, session.getCreatedAt(), session.getLastAccessTime());
             chatSessionMapper.saveOrUpdateSession(dbSession);
 
-            for (ChatHistory message : session.getPendingMessages()) {
+            for (ChatHistory message : messagesToFlush) {
                 chatHistoryMapper.save(message);
             }
 
-            log.debug("会话 {} 刷新 {} 条消息到数据库完成", sessionId, session.getPendingMessages().size());
-
-            session.getPendingMessages().clear();
+            log.debug("会话 {} 刷新 {} 条消息到数据库完成", sessionId, messagesToFlush.size());
 
         } catch (Exception e) {
-            log.error("会话 {} 刷新到数据库失败，消息保留在内存中", sessionId, e);
+            // 失败时回滚清空操作
+            synchronized (session.getLock()) {
+                session.getPendingMessages().addAll(messagesToFlush);
+            }
+            log.error("会话 {} 刷新到数据库失败，消息已恢复到缓存", sessionId, e);
         }
     }
 
@@ -145,7 +158,6 @@ public class ChatSessionService {
     private void flushPendingSessions() {
         log.debug("开始定期刷新会话缓存");
         int count = 0;
-
         for (String sessionId : sessionCache.keySet()) {
             try {
                 flushSession(sessionId);
@@ -154,7 +166,6 @@ public class ChatSessionService {
                 log.error("定期刷新会话 {} 失败", sessionId, e);
             }
         }
-
         if (count > 0) {
             log.debug("本次定期刷新处理了 {} 个会话", count);
         }
@@ -165,75 +176,41 @@ public class ChatSessionService {
         return getSessionHistory(sessionId, maxHistoryMessages);
     }
 
-    // 允许调用方指定最大返回数量
     public List<InferenceRequest.Message> getSessionHistory(String sessionId, int maxMessages) {
+        SessionCache session = getSession(sessionId);
+        session.updateLastAccessTime();  // 读取历史时更新访问时间
+
         List<InferenceRequest.Message> messages = new ArrayList<>();
 
         // 从数据库获取最新限制数量的历史记录
         List<ChatHistory> dbMessages = chatHistoryMapper.findBySessionIdWithLimit(sessionId, maxMessages);
 
-        // 由于数据库查询是按时间倒序排列的，这里需要反转以恢复正确的时间顺序
+        // 反转恢复时间顺序
         for (int i = dbMessages.size() - 1; i >= 0; i--) {
             ChatHistory msg = dbMessages.get(i);
             messages.add(new InferenceRequest.Message(msg.getRole(), msg.getContent()));
         }
 
-        // 缓存部分同步读取，避免并发修改时的结构不一致
-        SessionCache session = sessionCache.get(sessionId);
-        if (session != null) {
-            List<ChatHistory> cachedMessages;
-            synchronized (this) {
-                cachedMessages = new ArrayList<>(session.getPendingMessages());
-            }
+        // 缓存部分（无锁读取，CopyOnWriteArrayList 支持高效并发读）
+        List<ChatHistory> cachedMessages = session.getPendingMessages();
 
-            // 如果缓存消息加上已有消息总数未超过限制，则全部添加
-            if (cachedMessages.size() + messages.size() <= maxMessages) {
-                for (ChatHistory cached : cachedMessages) {
-                    messages.add(new InferenceRequest.Message(cached.getRole(), cached.getContent()));
-                }
-            } else {
-                // 如果会超出限制，只添加最接近限制数量的消息
-                int remainingSpace = maxMessages - messages.size();
-                if (remainingSpace > 0) {
-                    // 取缓存中的后remainingSpace条消息
-                    int startIndex = Math.max(0, cachedMessages.size() - remainingSpace);
-                    for (int i = startIndex; i < cachedMessages.size(); i++) {
-                        messages.add(new InferenceRequest.Message(cachedMessages.get(i).getRole(), cachedMessages.get(i).getContent()));
-                    }
-                }
-            }
-        }
-
-        return messages;
-    }
-
-    // 公共方法：从数据库和内存缓存收集会话消息（按时间顺序：数据库旧->新，缓存在后）
-    private List<InferenceRequest.Message> collectSessionMessages(String sessionId) {
-        List<InferenceRequest.Message> messages = new ArrayList<>();
-
-        // 数据库部分
-        List<ChatHistory> dbMessages = chatHistoryMapper.findBySessionId(sessionId);
-        for (ChatHistory msg : dbMessages) {
-            messages.add(new InferenceRequest.Message(msg.getRole(), msg.getContent()));
-        }
-
-        // 缓存部分同步读取，避免并发修改时的结构不一致
-        SessionCache session = sessionCache.get(sessionId);
-        if (session != null) {
-            List<ChatHistory> cachedMessages;
-            synchronized (this) {
-                cachedMessages = new ArrayList<>(session.getPendingMessages());
-            }
+        if (cachedMessages.size() + messages.size() <= maxMessages) {
             for (ChatHistory cached : cachedMessages) {
                 messages.add(new InferenceRequest.Message(cached.getRole(), cached.getContent()));
             }
+        } else {
+            int remainingSpace = maxMessages - messages.size();
+            if (remainingSpace > 0) {
+                int startIndex = Math.max(0, cachedMessages.size() - remainingSpace);
+                for (int i = startIndex; i < cachedMessages.size(); i++) {
+                    messages.add(new InferenceRequest.Message(cachedMessages.get(i).getRole(), cachedMessages.get(i).getContent()));
+                }
+            }
         }
-
 
         return messages;
     }
 
-    // 返回配置文件中的历史回显数量（UI 显示）
     public int getMaxHistoryEchoMessages() {
         return chatHistoryProperties != null ? chatHistoryProperties.getMaxHistoryEchoMessages() : 20;
     }
@@ -241,27 +218,24 @@ public class ChatSessionService {
     public void clearSessionCache(String sessionId) {
         SessionCache session = sessionCache.get(sessionId);
         if (session != null) {
-            synchronized (this) {
+            synchronized (session.getLock()) {
                 session.getPendingMessages().clear();
             }
             log.debug("已清除会话 {} 的内存待刷消息", sessionId);
         }
     }
 
-    /**
-     * 删除指定会话中在 beforeDate 之前的历史记录（只删除数据库中的历史）
-     */
     public void deleteSessionBefore(String sessionId, LocalDateTime beforeDate) {
         if (sessionId == null || beforeDate == null) return;
-        // 清除内存中待刷的数据中早于 beforeDate 的消息
+
         SessionCache session = sessionCache.get(sessionId);
         if (session != null) {
-            synchronized (this) {
+            synchronized (session.getLock()) {
                 session.getPendingMessages().removeIf(msg -> msg.getCreatedAt().isBefore(beforeDate));
             }
+            session.updateLastAccessTime();  // 更新访问时间
         }
 
-        // 删除数据库中早于 beforeDate 的历史
         try {
             chatHistoryMapper.deleteBySessionIdAndDate(sessionId, beforeDate);
             log.debug("已删除会话 {} 中 {} 之前的历史记录", sessionId, beforeDate);
@@ -272,27 +246,15 @@ public class ChatSessionService {
     }
 
     public void deleteSession(String sessionId) {
-        // 清除缓存
         clearSessionCache(sessionId);
-
-        // 删除数据库记录
         chatHistoryMapper.deleteBySessionId(sessionId);
         chatSessionMapper.deleteSession(sessionId);
-
         sessionCache.remove(sessionId);
-
         log.debug("会话 {} 及其所有历史已删除", sessionId);
     }
 
-
-    /**
-     * 危险操作：删除所有会话及其历史（数据库全部清空）
-     */
     public void deleteAllSessions() {
-        // 清空内存缓存
         sessionCache.clear();
-
-        // 删除数据库中所有历史与会话记录
         try {
             chatHistoryMapper.deleteAll();
             chatSessionMapper.deleteAll();
@@ -321,7 +283,7 @@ public class ChatSessionService {
                 return true;
             } catch (Exception e) {
                 log.warn("过期会话 {} 持久化失败，本次不移除以防数据丢失", sessionId, e);
-                return false;  // 失败 → 不移除
+                return false;
             }
         });
 
@@ -333,9 +295,7 @@ public class ChatSessionService {
     @PreDestroy
     public void onDestroy() {
         log.info("ChatSessionService 正在关闭，开始最终持久化");
-
         flushAllPendingSessions();
-
         scheduler.shutdown();
         try {
             if (!scheduler.awaitTermination(25, TimeUnit.SECONDS)) {
@@ -347,7 +307,6 @@ public class ChatSessionService {
             scheduler.shutdownNow();
             Thread.currentThread().interrupt();
         }
-
         log.info("ChatSessionService 已关闭");
     }
 }
