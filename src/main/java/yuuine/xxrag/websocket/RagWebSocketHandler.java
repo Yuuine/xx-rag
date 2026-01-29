@@ -2,6 +2,7 @@ package yuuine.xxrag.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -72,23 +73,29 @@ public class RagWebSocketHandler implements ApplicationContextAware {
                 history = chatSessionService.getSessionHistory(businessSessionId, historyLimit);
             }
             if (history != null && !history.isEmpty()) {
-                List<Map<String, Object>> payloadMessages = new ArrayList<>();
-                for (InferenceRequest.Message m : history) {
-                    Map<String, Object> mm = new HashMap<>();
-                    mm.put("role", m.getRole());
-                    mm.put("content", m.getContent());
-                    payloadMessages.add(mm);
-                }
-
-                Map<String, Object> payload = new HashMap<>();
-                payload.put("type", "history");
-                payload.put("messages", payloadMessages);
+                Map<String, Object> payload = getPayload(history);
 
                 sendToSession(session, payload);
             }
         } catch (Exception e) {
             log.error("在 onOpen 时发送历史记录失败", e);
         }
+    }
+
+    @NotNull
+    private static Map<String, Object> getPayload(List<InferenceRequest.Message> history) {
+        List<Map<String, Object>> payloadMessages = new ArrayList<>();
+        for (InferenceRequest.Message m : history) {
+            Map<String, Object> mm = new HashMap<>();
+            mm.put("role", m.getRole());
+            mm.put("content", m.getContent());
+            payloadMessages.add(mm);
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("type", "history");
+        payload.put("messages", payloadMessages);
+        return payload;
     }
 
     /**

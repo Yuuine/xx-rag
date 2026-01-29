@@ -24,6 +24,15 @@
         ORDER BY created_at
     </select>
 
+    <!-- 按会话ID获取指定数量的历史记录（最新的记录） -->
+    <select id="findBySessionIdWithLimit" parameterType="map" resultMap="ChatHistoryResultMap">
+        SELECT *
+        FROM rag_chat_history
+        WHERE session_id = #{sessionId}
+        ORDER BY created_at DESC
+        LIMIT #{limit}
+    </select>
+
     <delete id="deleteBySessionId" parameterType="string">
         DELETE
         FROM rag_chat_history

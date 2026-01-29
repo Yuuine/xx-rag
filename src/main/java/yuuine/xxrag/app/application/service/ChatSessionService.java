@@ -162,28 +162,47 @@ public class ChatSessionService {
     }
 
     public List<InferenceRequest.Message> getSessionHistory(String sessionId) {
-        List<InferenceRequest.Message> messages = collectSessionMessages(sessionId);
-
-        // 限制返回的历史消息数量，只返回最近的配置值条消息
         int maxHistoryMessages = chatHistoryProperties.getMaxHistoryMessages();
-        if (messages.size() > maxHistoryMessages) {
-            messages = messages.stream()
-                    .skip(Math.max(0, messages.size() - maxHistoryMessages))
-                    .collect(Collectors.toList());
-        }
-
-        return messages;
+        return getSessionHistory(sessionId, maxHistoryMessages);
     }
 
     // 允许调用方指定最大返回数量
     public List<InferenceRequest.Message> getSessionHistory(String sessionId, int maxMessages) {
-        List<InferenceRequest.Message> messages = collectSessionMessages(sessionId);
+        List<InferenceRequest.Message> messages = new ArrayList<>();
 
-        // 限制返回的历史消息数量，只返回最近的 maxMessages 条消息
-        if (maxMessages > 0 && messages.size() > maxMessages) {
-            messages = messages.stream()
-                    .skip(Math.max(0, messages.size() - maxMessages))
-                    .collect(Collectors.toList());
+        // 从数据库获取最新限制数量的历史记录
+        List<ChatHistory> dbMessages = chatHistoryMapper.findBySessionIdWithLimit(sessionId, maxMessages);
+
+        // 由于数据库查询是按时间倒序排列的，这里需要反转以恢复正确的时间顺序
+        for (int i = dbMessages.size() - 1; i >= 0; i--) {
+            ChatHistory msg = dbMessages.get(i);
+            messages.add(new InferenceRequest.Message(msg.getRole(), msg.getContent()));
+        }
+
+        // 缓存部分同步读取，避免并发修改时的结构不一致
+        SessionCache session = sessionCache.get(sessionId);
+        if (session != null) {
+            List<ChatHistory> cachedMessages;
+            synchronized (this) {
+                cachedMessages = new ArrayList<>(session.getPendingMessages());
+            }
+
+            // 如果缓存消息加上已有消息总数未超过限制，则全部添加
+            if (cachedMessages.size() + messages.size() <= maxMessages) {
+                for (ChatHistory cached : cachedMessages) {
+                    messages.add(new InferenceRequest.Message(cached.getRole(), cached.getContent()));
+                }
+            } else {
+                // 如果会超出限制，只添加最接近限制数量的消息
+                int remainingSpace = maxMessages - messages.size();
+                if (remainingSpace > 0) {
+                    // 取缓存中的后remainingSpace条消息
+                    int startIndex = Math.max(0, cachedMessages.size() - remainingSpace);
+                    for (int i = startIndex; i < cachedMessages.size(); i++) {
+                        messages.add(new InferenceRequest.Message(cachedMessages.get(i).getRole(), cachedMessages.get(i).getContent()));
+                    }
+                }
+            }
         }
 
         return messages;
