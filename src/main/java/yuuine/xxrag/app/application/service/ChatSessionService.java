@@ -9,7 +9,6 @@ import org.springframework.modulith.NamedInterface;
 import org.springframework.stereotype.Service;
 import yuuine.xxrag.app.config.ChatHistoryProperties;
 import yuuine.xxrag.app.domain.model.ChatHistory;
-import yuuine.xxrag.app.domain.model.ChatSession;
 import yuuine.xxrag.app.domain.repository.ChatHistoryMapper;
 import yuuine.xxrag.app.domain.repository.ChatSessionMapper;
 import yuuine.xxrag.dto.request.InferenceRequest;
@@ -35,6 +34,10 @@ public class ChatSessionService {
 
     @Value("${app.chat.session.expiry-minutes:30}")
     private int sessionExpiryMinutes;
+
+    public ChatSessionMapper getChatSessionMapper() {
+        return chatSessionMapper;
+    }
 
     @Data
     public static class SessionCache {

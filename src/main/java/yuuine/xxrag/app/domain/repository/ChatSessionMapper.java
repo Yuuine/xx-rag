@@ -10,5 +10,5 @@ public interface ChatSessionMapper {
 
     void deleteSession(String sessionId);
 
-    void deleteAll();
+    int deleteAll();
 }
