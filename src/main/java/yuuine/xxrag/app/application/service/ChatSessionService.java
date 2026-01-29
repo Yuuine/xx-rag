@@ -73,13 +73,15 @@ public class ChatSessionService {
     private final ChatSessionMapper chatSessionMapper;
     private final ChatHistoryMapper chatHistoryMapper;
     private final ChatHistoryProperties chatHistoryProperties;
+    private final ChatSessionTransactionalService chatSessionTransactionalService;
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
 
-    public ChatSessionService(ChatSessionMapper chatSessionMapper, ChatHistoryMapper chatHistoryMapper, ChatHistoryProperties chatHistoryProperties) {
+    public ChatSessionService(ChatSessionMapper chatSessionMapper, ChatHistoryMapper chatHistoryMapper, ChatHistoryProperties chatHistoryProperties, ChatSessionTransactionalService chatSessionTransactionalService) {
         this.chatSessionMapper = chatSessionMapper;
         this.chatHistoryMapper = chatHistoryMapper;
         this.chatHistoryProperties = chatHistoryProperties;
+        this.chatSessionTransactionalService = chatSessionTransactionalService;
     }
 
     @PostConstruct
@@ -149,13 +151,8 @@ public class ChatSessionService {
         }
 
         try {
-            ChatSession dbSession = new ChatSession(sid, session.getCreatedAt(), session.getLastAccessTime());
-            chatSessionMapper.saveOrUpdateSession(dbSession);
-
-            for (ChatHistory message : messagesToFlush) {
-                message.setSessionId(sid);
-                chatHistoryMapper.save(message);
-            }
+            // use transactional service to persist session and messages atomically
+            chatSessionTransactionalService.persistSessionAndHistories(sid, session.getCreatedAt(), session.getLastAccessTime(), messagesToFlush);
 
             log.debug("会话 {} 刷新 {} 条消息到数据库完成", sid, messagesToFlush.size());
 
@@ -266,7 +263,8 @@ public class ChatSessionService {
         }
 
         try {
-            chatHistoryMapper.deleteBySessionIdAndDate(sid, beforeDate);
+            // delegate to transactional service for delete by date
+            chatSessionTransactionalService.deleteBySessionIdAndDate(sid, beforeDate);
             log.debug("已删除会话 {} 中 {} 之前的历史记录", sid, beforeDate);
         } catch (Exception e) {
             log.error("删除会话 {} 的历史时出错", sid, e);
@@ -280,8 +278,8 @@ public class ChatSessionService {
         String sid = normalizeSessionId(sessionId);
 
         clearSessionCache(sid);
-        chatHistoryMapper.deleteBySessionId(sid);
-        chatSessionMapper.deleteSession(sid);
+        // delete histories and session in a single transaction
+        chatSessionTransactionalService.deleteSessionAndHistories(sid);
         sessionCache.remove(sid);
         log.debug("会话 {} 及其所有历史已删除", sid);
     }
@@ -289,8 +287,7 @@ public class ChatSessionService {
     public void deleteAllSessions() {
         sessionCache.clear();
         try {
-            chatHistoryMapper.deleteAll();
-            chatSessionMapper.deleteAll();
+            chatSessionTransactionalService.deleteAllSessionsTransactional();
             log.warn("已删除所有会话及其历史（危险操作）");
         } catch (Exception e) {
             log.error("删除所有会话失败", e);
