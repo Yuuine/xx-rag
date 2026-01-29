@@ -85,7 +85,7 @@ app:
       max-history-messages: 10      # 每次返回给模型的最大历史消息数
       max-history-echo-messages: 20  # ui 回显最大历史消息数
   admin:
-    cleanup-password: changeme     # 管理员清理所有会话记录的密码（请在生产环境更改）
+    cleanup-password: changeme     # 管理员清理所有会话记录的密码
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml
@@ -96,15 +96,9 @@ mybatis:
 logging:
   level:
     yuuine.xxrag: debug
-  file:
-    name: ./logs/application.log
-  logback:
-    rollingpolicy:
-      max-file-size: 10MB
-      max-history: 7
-      total-size-cap: 1GB
-      file-name-pattern: ./logs/application.%d{yyyy-MM-dd}.%i.log
+    TRACING_LOGGER: info        # 方法调用跟踪日志级别
+  config: classpath:logback-spring.xml
 
 aop:
-  FlowTrace-enabled: false      # 调用方法跟踪
-  Performance-enabled: true     # 方法性能监控
+  flow-trace-enabled: true      # 调用方法跟踪
+  performance-enabled: true     # 方法性能监控

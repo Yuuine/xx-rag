@@ -32,6 +32,7 @@ app:
       session-expiry-minutes: 30    # 会话过期时间（分钟）
       persistence-enabled: true     # 是否启用会话持久化
       max-history-messages: 10      # 每次返回给模型的最大历史消息数
+      max-history-echo-messages: 20  # ui 回显最大历史消息数
 ```
 
 ## API 接口
