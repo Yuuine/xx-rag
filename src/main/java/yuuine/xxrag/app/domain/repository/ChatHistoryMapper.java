@@ -12,6 +12,9 @@ public interface ChatHistoryMapper {
 
     List<ChatHistory> findBySessionId(@Param("sessionId") String sessionId);
 
+    // 按会话ID获取指定数量的历史记录（最新的记录）
+    List<ChatHistory> findBySessionIdWithLimit(@Param("sessionId") String sessionId, @Param("limit") int limit);
+
     int deleteBySessionId(@Param("sessionId") String sessionId);
 
     int deleteBySessionIdAndDate(@Param("sessionId") String sessionId,

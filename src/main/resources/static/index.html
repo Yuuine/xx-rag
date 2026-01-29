@@ -759,6 +759,21 @@
                     try {
                         const data = JSON.parse(event.data);
 
+                        // 历史消息处理
+                        if (data && data.type === 'history' && Array.isArray(data.messages)) {
+                            // 按顺序显示历史消息（默认服务器返回的是最近n条的升序）
+                            data.messages.forEach(msg => {
+                                if (!msg || !msg.role) return;
+                                if (msg.role === 'user') {
+                                    addUserMessage(msg.content || '');
+                                } else if (msg.role === 'assistant') {
+                                    // 渲染为已完成的AI消息（耗时未知，显示0秒）
+                                    renderAiMessage(msg.content || '', 0);
+                                }
+                            });
+                            return; // 历史消息处理完成，直接返回
+                        }
+
                         // 根据消息类型处理
                         if (data.finishReason === 'stop') {
                             // 结束消息 - 完成流式传输

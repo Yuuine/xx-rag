@@ -2,6 +2,7 @@ package yuuine.xxrag.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Component;
 import yuuine.xxrag.app.api.AppApi;
 import yuuine.xxrag.app.application.service.ChatSessionService;
 import yuuine.xxrag.dto.response.StreamResponse;
+import yuuine.xxrag.dto.request.InferenceRequest;
 
 import jakarta.websocket.*;
 import jakarta.websocket.server.ServerEndpoint;
@@ -18,6 +20,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 @Component
 @ServerEndpoint("/ws-chat")
@@ -60,6 +64,38 @@ public class RagWebSocketHandler implements ApplicationContextAware {
 
         log.info("新的WebSocket连接，WebSocket ID: {}, 业务Session ID: {}，当前连接数: {}",
                 session.getId(), businessSessionId, webSocketSet.size());
+
+        // 获取并发送最近的历史记录
+        try {
+            int historyLimit = chatSessionService != null ? chatSessionService.getMaxHistoryEchoMessages() : 20;
+            List<InferenceRequest.Message> history = null;
+            if (chatSessionService != null) {
+                history = chatSessionService.getSessionHistory(businessSessionId, historyLimit);
+            }
+            if (history != null && !history.isEmpty()) {
+                Map<String, Object> payload = getPayload(history);
+
+                sendToSession(session, payload);
+            }
+        } catch (Exception e) {
+            log.error("在 onOpen 时发送历史记录失败", e);
+        }
+    }
+
+    @NotNull
+    private static Map<String, Object> getPayload(List<InferenceRequest.Message> history) {
+        List<Map<String, Object>> payloadMessages = new ArrayList<>();
+        for (InferenceRequest.Message m : history) {
+            Map<String, Object> mm = new HashMap<>();
+            mm.put("role", m.getRole());
+            mm.put("content", m.getContent());
+            payloadMessages.add(mm);
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("type", "history");
+        payload.put("messages", payloadMessages);
+        return payload;
     }
 
     /**

@@ -75,10 +75,10 @@ public class ChatSessionService {
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
 
-    public ChatSessionService(ChatSessionMapper chatSessionMapper, ChatHistoryMapper chatHistoryMapper) {
+    public ChatSessionService(ChatSessionMapper chatSessionMapper, ChatHistoryMapper chatHistoryMapper, ChatHistoryProperties chatHistoryProperties) {
         this.chatSessionMapper = chatSessionMapper;
         this.chatHistoryMapper = chatHistoryMapper;
-        this.chatHistoryProperties = new ChatHistoryProperties();
+        this.chatHistoryProperties = chatHistoryProperties;
     }
 
     // 在构造完成后启动定时任务
@@ -162,6 +162,54 @@ public class ChatSessionService {
     }
 
     public List<InferenceRequest.Message> getSessionHistory(String sessionId) {
+        int maxHistoryMessages = chatHistoryProperties.getMaxHistoryMessages();
+        return getSessionHistory(sessionId, maxHistoryMessages);
+    }
+
+    // 允许调用方指定最大返回数量
+    public List<InferenceRequest.Message> getSessionHistory(String sessionId, int maxMessages) {
+        List<InferenceRequest.Message> messages = new ArrayList<>();
+
+        // 从数据库获取最新限制数量的历史记录
+        List<ChatHistory> dbMessages = chatHistoryMapper.findBySessionIdWithLimit(sessionId, maxMessages);
+
+        // 由于数据库查询是按时间倒序排列的，这里需要反转以恢复正确的时间顺序
+        for (int i = dbMessages.size() - 1; i >= 0; i--) {
+            ChatHistory msg = dbMessages.get(i);
+            messages.add(new InferenceRequest.Message(msg.getRole(), msg.getContent()));
+        }
+
+        // 缓存部分同步读取，避免并发修改时的结构不一致
+        SessionCache session = sessionCache.get(sessionId);
+        if (session != null) {
+            List<ChatHistory> cachedMessages;
+            synchronized (this) {
+                cachedMessages = new ArrayList<>(session.getPendingMessages());
+            }
+
+            // 如果缓存消息加上已有消息总数未超过限制，则全部添加
+            if (cachedMessages.size() + messages.size() <= maxMessages) {
+                for (ChatHistory cached : cachedMessages) {
+                    messages.add(new InferenceRequest.Message(cached.getRole(), cached.getContent()));
+                }
+            } else {
+                // 如果会超出限制，只添加最接近限制数量的消息
+                int remainingSpace = maxMessages - messages.size();
+                if (remainingSpace > 0) {
+                    // 取缓存中的后remainingSpace条消息
+                    int startIndex = Math.max(0, cachedMessages.size() - remainingSpace);
+                    for (int i = startIndex; i < cachedMessages.size(); i++) {
+                        messages.add(new InferenceRequest.Message(cachedMessages.get(i).getRole(), cachedMessages.get(i).getContent()));
+                    }
+                }
+            }
+        }
+
+        return messages;
+    }
+
+    // 公共方法：从数据库和内存缓存收集会话消息（按时间顺序：数据库旧->新，缓存在后）
+    private List<InferenceRequest.Message> collectSessionMessages(String sessionId) {
         List<InferenceRequest.Message> messages = new ArrayList<>();
 
         // 数据库部分
@@ -182,16 +230,13 @@ public class ChatSessionService {
             }
         }
 
-        // 限制返回的历史消息数量，只返回最近的n条消息
-        int maxHistoryMessages = chatHistoryProperties.getMaxHistoryMessages();
-        if (messages.size() > maxHistoryMessages) {
-            // 只保留最近的maxHistoryMessages条消息
-            messages = messages.stream()
-                    .skip(Math.max(0, messages.size() - maxHistoryMessages))
-                    .collect(Collectors.toList());
-        }
 
         return messages;
+    }
+
+    // 返回配置文件中的历史回显数量（UI 显示）
+    public int getMaxHistoryEchoMessages() {
+        return chatHistoryProperties != null ? chatHistoryProperties.getMaxHistoryEchoMessages() : 20;
     }
 
     public void clearSessionCache(String sessionId) {
