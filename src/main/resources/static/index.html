@@ -289,7 +289,7 @@
         }
 
         .message.ai pre {
-            background: #f6f8fa;
+            BACKGROUND: #f6f8fa;
             padding: 12px;
             border-radius: 8px;
             overflow-x: auto;
@@ -495,14 +495,16 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
             justify-content: center;
             align-items: flex-start;
             padding-top: 20vh;
             z-index: 1000;
         }
 
-        .modal.active { display: flex; }
+        .modal.active {
+            display: flex;
+        }
 
         .modal-content {
             background: white;
@@ -510,16 +512,32 @@
             border-radius: 12px;
             width: 360px;
             text-align: center;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
         }
 
-        .modal-buttons { margin-top: 18px; display:flex; gap:12px; justify-content:center; }
+        .modal-buttons {
+            margin-top: 18px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
 
-        .modal-btn { padding:8px 18px; border:none; border-radius:6px; cursor:pointer; }
+        .modal-btn {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
 
-        .modal-cancel { background:#eee; color:#333; }
+        .modal-cancel {
+            background: #eee;
+            color: #333;
+        }
 
-        .modal-confirm { background:#dc3545; color:white; }
+        .modal-confirm {
+            background: #dc3545;
+            color: white;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
@@ -537,8 +555,12 @@
             <button class="upload-trigger" id="viewDocsTrigger" title="查看文档" aria-label="查看文档"
                     style="margin-right: 8px;">📄
             </button>
-            <button class="upload-trigger" id="newSessionBtn" title="清除会话" aria-label="清除会话" style="margin-right:8px;">🔄</button>
-            <button class="upload-trigger" id="cleanupBtn" title="清理旧记录" aria-label="清理旧记录" style="margin-right:8px;">🧹</button>
+            <button class="upload-trigger" id="newSessionBtn" title="清除会话" aria-label="清除会话"
+                    style="margin-right:8px;">🔄
+            </button>
+            <button class="upload-trigger" id="cleanupBtn" title="清理旧记录" aria-label="清理旧记录"
+                    style="margin-right:8px;">🧹
+            </button>
             <button class="upload-trigger" id="uploadTrigger" title="上传文档" aria-label="上传文档">↑</button>
         </div>
     </header>
@@ -563,13 +585,15 @@
     <div class="modal-content">
         <div id="confirmModalMessage">确认操作？</div>
         <div id="confirmModalInputWrapper" style="margin-top:12px; display:none;">
-            <input id="confirmModalInput" type="number" min="1" placeholder="天数，例如 30" style="width:100%; padding:8px; box-sizing:border-box;">
+            <input id="confirmModalInput" type="number" min="1" placeholder="天数，例如 30"
+                   style="width:100%; padding:8px; box-sizing:border-box;">
         </div>
         <div id="confirmModalCheckboxWrapper" style="margin-top:8px; display:none; text-align:left;">
             <label><input type="checkbox" id="confirmModalCheckbox"> 全部删除（删除整个会话）</label>
         </div>
         <div id="confirmModalPasswordWrapper" style="margin-top:12px; display:none;">
-            <input id="confirmModalPassword" type="password" placeholder="请输入管理员密码" style="width:100%; padding:8px; box-sizing:border-box;">
+            <input id="confirmModalPassword" type="password" placeholder="请输入管理员密码"
+                   style="width:100%; padding:8px; box-sizing:border-box;">
         </div>
         <div class="modal-buttons">
             <button id="confirmModalCancel" class="modal-btn modal-cancel">取消</button>
@@ -579,6 +603,14 @@
 </div>
 <div id="toast" class="toast"></div>
 <script>
+    // marked 配置：启用 GFM、breaks（单个 \n 转为 <br>）、支持水平线、列表、嵌套加粗等
+    marked.setOptions({
+        gfm: true,
+        breaks: true,
+        headerIds: false,
+        mangle: false
+    });
+
     function showModal(options) {
         return new Promise((resolve) => {
             const modal = document.getElementById('confirmModal');
@@ -623,7 +655,7 @@
 
             function onCancel() {
                 cleanup();
-                resolve({ confirmed: false });
+                resolve({confirmed: false});
             }
 
             function onConfirm() {
@@ -631,7 +663,7 @@
                 const allChecked = options.showCheckbox ? checkboxEl.checked : false;
                 const pwd = options.showPassword ? passwordEl.value : null;
                 cleanup();
-                resolve({ confirmed: true, value: val, all: allChecked, password: pwd });
+                resolve({confirmed: true, value: val, all: allChecked, password: pwd});
             }
 
             btnCancel.addEventListener('click', onCancel);
@@ -661,49 +693,55 @@
         const maxReconnectAttempts = 5;
         const reconnectInterval = 3000;
 
-        // 当前会话的状态变量
+        // 流式输出相关变量
         let currentStreamStartTime = null;
-        let lastAiMessageElement = null;
-        let accumulatedContent = ''; // 累积内容，用于去除多余空格
-        let isStreaming = false; // 标记是否正在流式传输
-        let timeoutId = null; // 超时计时器ID
-        const TIMEOUT_DURATION = 6 * 60 * 10000; // 60分钟超时
+        let currentAiMessageElement = null;     // 当前正在流式的完整消息 div
+        let currentAiContentElement = null;     // 只负责渲染 Markdown 内容的子 div
+        let streamBuffer = '';                  // 累积的流式文本
+        let dirty = false;                      // 是否需要更新 DOM
+        let isStreaming = false;
+        let timeoutId = null;
+        const TIMEOUT_DURATION = 6 * 60 * 1000; // 60 分钟超时
+
+        // 100ms 缓冲更新定时器（减少闪烁）
+        const updateInterval = setInterval(() => {
+            if (dirty && currentAiContentElement) {
+                const shouldScroll = messagesContainer.scrollTop + messagesContainer.clientHeight >= messagesContainer.scrollHeight - 20;
+                currentAiContentElement.innerHTML = marked.parse(streamBuffer);
+                if (shouldScroll) {
+                    scrollToBottom();
+                }
+                dirty = false;
+            }
+        }, 100);
 
         // 会话管理相关变量
         let sessionId = null;
         const SID_LOCALSTORAGE_KEY = 'chat_sid';
 
-        // 获取或生成会话ID（优先从 localStorage）
+        // 获取或生成会话ID
         function getSessionId() {
             if (sessionId) return sessionId;
-
-            // 尝试从 localStorage 中读取 sid
             try {
                 sessionId = localStorage.getItem(SID_LOCALSTORAGE_KEY);
             } catch (e) {
-                console.warn('读取 localStorage 失败，可能处于隐身模式或被禁用', e);
-                sessionId = null;
+                console.warn('读取 localStorage 失败', e);
             }
-
             if (!sessionId) {
                 sessionId = generateSessionId();
                 try {
                     localStorage.setItem(SID_LOCALSTORAGE_KEY, sessionId);
                 } catch (e) {
-                    console.warn('写入 localStorage 失败，可能处于隐身模式或被禁用', e);
+                    console.warn('写入 localStorage 失败', e);
                 }
             }
-
             return sessionId;
         }
 
-        // 生成 UUID（优先使用浏览器内置 crypto.randomUUID）
         function generateSessionId() {
             if (window.crypto && typeof window.crypto.randomUUID === 'function') {
                 return window.crypto.randomUUID();
             }
-
-            // 回退实现（RFC4122 v4 风格）
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
                 const r = Math.random() * 16 | 0;
                 const v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -711,20 +749,15 @@
             });
         }
 
-        // 清除会话（移除 localStorage 中的 sid）
         function clearSession() {
             sessionId = null;
             try {
                 localStorage.removeItem(SID_LOCALSTORAGE_KEY);
             } catch (e) {
-                console.warn('从 localStorage 中移除 sid 失败', e);
+                console.warn('移除 sid 失败', e);
             }
             showToast('会话已清除', 'success');
-
-            // 清空消息记录
             messagesContainer.innerHTML = '';
-
-            // 重新连接WebSocket
             reconnectWebSocket();
         }
 
@@ -736,175 +769,111 @@
         }
 
         function connectWebSocket() {
-            if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
-                return;
-            }
+            if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) return;
 
-            // 获取会话ID（使用 sid 查询参数，localStorage 中持久化）
             const currentSessionId = getSessionId();
-
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//${window.location.host}/ws-chat?sid=${currentSessionId}`;
 
             try {
                 ws = new WebSocket(wsUrl);
 
-                ws.onopen = function (event) {
+                ws.onopen = () => {
                     console.log('WebSocket连接已建立，会话ID:', currentSessionId);
-                    wsReconnectAttempts = 0; // 重置重连计数
-                    showToast('WebSocket连接已建立', 'success');
+                    wsReconnectAttempts = 0;
+                    showToast('连接已建立', 'success');
                 };
 
-                ws.onmessage = function (event) {
+                ws.onmessage = (event) => {
                     try {
                         const data = JSON.parse(event.data);
 
-                        // 历史消息处理
                         if (data && data.type === 'history' && Array.isArray(data.messages)) {
-                            // 按顺序显示历史消息（默认服务器返回的是最近n条的升序）
                             data.messages.forEach(msg => {
                                 if (!msg || !msg.role) return;
                                 if (msg.role === 'user') {
                                     addUserMessage(msg.content || '');
                                 } else if (msg.role === 'assistant') {
-                                    // 渲染为已完成的AI消息（耗时未知，显示0秒）
                                     renderAiMessage(msg.content || '', 0);
                                 }
                             });
-                            return; // 历史消息处理完成，直接返回
+                            return;
                         }
 
-                        // 根据消息类型处理
                         if (data.finishReason === 'stop') {
-                            // 结束消息 - 完成流式传输
-                            console.log('流式传输已完成');
                             finalizeStream();
                         } else if (data.message && data.message.startsWith('Error:')) {
-                            // 错误消息
-                            console.error('WebSocket错误:', data.message);
-                            renderAiMessage('抱歉，处理过程中出现错误：' + data.message.replace('Error: ', ''));
+                            renderAiMessage('错误：' + data.message.replace('Error: ', ''));
                             finalizeStream();
                         } else if (data.content) {
-                            // 内容消息 - 需要累积显示
-                            processStreamContent(data.content);
-                            // 每次收到有效内容时，重置超时计时器
+                            processStreamChunk(data.content);
                             resetTimeoutTimer();
                         }
                     } catch (e) {
-                        console.error('处理WebSocket消息时出错:', e);
+                        console.error('解析消息失败:', e);
                         renderAiMessage('收到无法解析的消息');
                         finalizeStream();
                     }
                 };
 
-                ws.onclose = function (event) {
-                    console.log('WebSocket连接已关闭，代码:', event.code, '原因:', event.reason);
+                ws.onclose = (event) => {
+                    console.log('WebSocket关闭', event.code, event.reason);
+                    if (isStreaming) finalizeStream();
+                    clearTimeoutTimer();
 
-                    // 如果正在流式传输时连接关闭，则完成当前流
-                    if (isStreaming) {
-                        finalizeStream();
-                    }
-
-                    // 清除超时计时器
-                    clearTimeout(timeoutId);
-                    timeoutId = null;
-
-                    // 尝试重连（除非是正常关闭）
                     if (event.code !== 1000 && wsReconnectAttempts < maxReconnectAttempts) {
                         wsReconnectAttempts++;
-                        showToast(`WebSocket连接已断开，${reconnectInterval / 1000}秒后尝试重连 (${wsReconnectAttempts}/${maxReconnectAttempts})`, 'error');
-
-                        setTimeout(function () {
-                            connectWebSocket();
-                        }, reconnectInterval);
+                        showToast(`连接断开，${reconnectInterval / 1000}秒后重连 (${wsReconnectAttempts}/${maxReconnectAttempts})`, 'error');
+                        setTimeout(connectWebSocket, reconnectInterval);
                     } else if (wsReconnectAttempts >= maxReconnectAttempts) {
-                        showToast('WebSocket重连次数已达上限，请刷新页面重试', 'error');
+                        showToast('重连次数超限，请刷新页面', 'error');
                     }
                 };
 
-                ws.onerror = function (error) {
-                    console.error('WebSocket发生错误:', error);
-                    showToast('WebSocket连接发生错误', 'error');
+                ws.onerror = (error) => {
+                    console.error('WebSocket错误:', error);
+                    showToast('连接错误', 'error');
                 };
             } catch (e) {
-                console.error('创建WebSocket连接时出错:', e);
-                showToast('创建WebSocket连接失败', 'error');
+                console.error('创建WebSocket失败:', e);
+                showToast('连接失败', 'error');
             }
         }
 
-        // 优雅重连：关闭现有连接（如果有），然后重新建立连接
         function reconnectWebSocket() {
-            try {
-                if (ws) {
-                    // 移除事件处理器，避免触发 onclose 的自动重连逻辑
-                    try {
-                        ws.onopen = null;
-                        ws.onmessage = null;
-                        ws.onclose = null;
-                        ws.onerror = null;
-                    } catch (e) {
-                        // ignore
-                    }
-
-                    if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
-                        try {
-                            ws.close(1000, 'client_reconnect');
-                        } catch (e) {
-                            console.warn('关闭 WebSocket 时出错', e);
-                        }
-                    }
-                    ws = null;
+            if (ws) {
+                ws.onopen = ws.onmessage = ws.onclose = ws.onerror = null;
+                if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+                    ws.close(1000, 'client_reconnect');
                 }
-            } catch (e) {
-                console.warn('reconnectWebSocket 出错', e);
+                ws = null;
             }
-
-            // 小延迟后重新连接，确保旧连接资源已释放
-            setTimeout(function () {
+            setTimeout(() => {
                 wsReconnectAttempts = 0;
                 connectWebSocket();
             }, 200);
         }
 
-        // 连接WebSocket
         connectWebSocket();
 
-        // 设置超时计时器
+        // 超时管理
         function setupTimeoutTimer() {
-            // 清除已有的超时计时器
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-            }
-
-            // 设置新的超时计时器
-            timeoutId = setTimeout(function() {
+            if (timeoutId) clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
                 if (isStreaming) {
-                    console.log('请求超时，结束当前流');
-                    showToast('请求超时，已结束当前会话', 'error');
+                    showToast('请求超时', 'error');
                     finalizeStream();
-
-                    // 如果WebSocket还在连接状态，可以发送取消消息
                     if (ws && ws.readyState === WebSocket.OPEN) {
-                        try {
-                            ws.send(JSON.stringify({ type: 'cancel' }));
-                        } catch (e) {
-                            console.error('发送取消消息失败:', e);
-                        }
+                        ws.send(JSON.stringify({type: 'cancel'}));
                     }
                 }
             }, TIMEOUT_DURATION);
         }
 
-        // 重置超时计时器
         function resetTimeoutTimer() {
-            if (isStreaming && timeoutId) {
-                console.log('重置超时计时器');
-                clearTimeout(timeoutId);
-                setupTimeoutTimer();
-            }
+            if (isStreaming) setupTimeoutTimer();
         }
 
-        // 清除超时计时器
         function clearTimeoutTimer() {
             if (timeoutId) {
                 clearTimeout(timeoutId);
@@ -912,133 +881,157 @@
             }
         }
 
-        // 处理流式内容，去除多余空格
-        function processStreamContent(content) {
-            // 如果内容为空，直接返回
-            if (!content || content.trim() === '') return;
-
-            // 累积内容，用于去除消息段之间的多余空格
-            accumulatedContent += content;
-
-            // 清理多余的空格：将连续的多个空格替换为单个空格
-            // 但保留换行符和必要的空格
-            let cleanedContent = accumulatedContent;
-
-            // 处理Markdown格式中的特殊情况
-            // 1. 代码块中的空格应该保留
-            // 2. 普通文本中多个连续空格替换为一个
-            // 这里使用简单的处理：将两个以上的空格替换为一个
-            // 但保留换行前后的空格
-            cleanedContent = cleanedContent.replace(/ {2,}/g, ' ');
-
-            // 更新显示
-            updateAiMessageDisplay(cleanedContent);
+        // 流式处理
+        function processStreamChunk(chunk) {
+            if (!chunk) return;
+            streamBuffer += chunk;
+            dirty = true;
         }
 
-        // 更新AI消息显示
-        function updateAiMessageDisplay(content) {
-            if (!lastAiMessageElement) {
-                // 创建新的AI消息元素
-                lastAiMessageElement = document.createElement('div');
-                lastAiMessageElement.className = 'message ai';
+        function startNewStream() {
+            isStreaming = true;
+            currentStreamStartTime = new Date();
+            streamBuffer = '';
+            dirty = false;
 
-                // 解析Markdown
-                const html = marked.parse(content);
-                lastAiMessageElement.innerHTML = html;
+            // 创建消息容器
+            currentAiMessageElement = document.createElement('div');
+            currentAiMessageElement.className = 'message ai';
 
-                // 添加时间戳
-                const timestamp = document.createElement('div');
-                timestamp.className = 'timestamp';
-                timestamp.textContent = new Date().toLocaleString();
-                timestamp.style.display = showTimestamps ? 'block' : 'none';
-                lastAiMessageElement.appendChild(timestamp);
+            currentAiContentElement = document.createElement('div'); // 专门渲染 Markdown
+            currentAiMessageElement.appendChild(currentAiContentElement);
 
-                // 添加"正在思考中..."脚注
-                const footnote = document.createElement('div');
-                footnote.className = 'footnote';
-                footnote.textContent = '正在思考中...';
-                lastAiMessageElement.appendChild(footnote);
+            const timestamp = document.createElement('div');
+            timestamp.className = 'timestamp';
+            timestamp.textContent = new Date().toLocaleString();
+            timestamp.style.display = showTimestamps ? 'block' : 'none';
+            currentAiMessageElement.appendChild(timestamp);
 
-                messagesContainer.appendChild(lastAiMessageElement);
-                scrollToBottom();
-            } else {
-                // 更新现有消息
-                // 解析Markdown
-                const html = marked.parse(content);
+            const footnote = document.createElement('div');
+            footnote.className = 'footnote';
+            footnote.textContent = '正在思考中...';
+            currentAiMessageElement.appendChild(footnote);
 
-                // 保存时间戳和脚注
-                const timestampEl = lastAiMessageElement.querySelector('.timestamp');
-                const footnoteEl = lastAiMessageElement.querySelector('.footnote');
+            messagesContainer.appendChild(currentAiMessageElement);
+            scrollToBottom();
 
-                // 更新内容
-                lastAiMessageElement.innerHTML = html;
+            setupTimeoutTimer();
+        }
 
-                // 重新添加时间戳
-                if (timestampEl) {
-                    lastAiMessageElement.appendChild(timestampEl);
-                } else {
-                    const newTimestamp = document.createElement('div');
-                    newTimestamp.className = 'timestamp';
-                    newTimestamp.textContent = new Date().toLocaleString();
-                    newTimestamp.style.display = showTimestamps ? 'block' : 'none';
-                    lastAiMessageElement.appendChild(newTimestamp);
-                }
+        function finalizeStream() {
+            if (!isStreaming) return;
 
-                // 重新添加"正在思考中..."脚注
-                if (footnoteEl) {
-                    footnoteEl.textContent = '正在思考中...';
-                    lastAiMessageElement.appendChild(footnoteEl);
-                } else {
-                    const newFootnote = document.createElement('div');
-                    newFootnote.className = 'footnote';
-                    newFootnote.textContent = '正在思考中...';
-                    lastAiMessageElement.appendChild(newFootnote);
-                }
+            // 最终一次强制更新
+            if (currentAiContentElement) {
+                currentAiContentElement.innerHTML = marked.parse(streamBuffer);
             }
 
+            const duration = currentStreamStartTime ? ((new Date() - currentStreamStartTime) / 1000).toFixed(2) : '0.00';
+            const footnote = currentAiMessageElement.querySelector('.footnote');
+            if (footnote) {
+                footnote.textContent = `推理耗时: ${duration} 秒`;
+            }
+
+            clearTimeoutTimer();
+            isStreaming = false;
+            currentStreamStartTime = null;
+            currentAiMessageElement = null;
+            currentAiContentElement = null;
+            streamBuffer = '';
+
+            sendBtn.disabled = false;
+            sendBtn.textContent = '发送';
+            questionInput.focus();
+        }
+
+        // 用户消息
+        function addUserMessage(text) {
+            const div = document.createElement('div');
+            div.className = 'message user';
+            div.textContent = text;
+            const timestamp = document.createElement('div');
+            timestamp.className = 'timestamp';
+            timestamp.textContent = new Date().toLocaleString();
+            timestamp.style.display = showTimestamps ? 'block' : 'none';
+            div.appendChild(timestamp);
+            messagesContainer.appendChild(div);
             scrollToBottom();
         }
 
-        // 完成流式传输
-        function finalizeStream() {
-            if (isStreaming && lastAiMessageElement) {
-                // 计算推理耗时
-                const duration = currentStreamStartTime ?
-                    ((new Date() - currentStreamStartTime) / 1000).toFixed(2) : '0.00';
+        // 完整历史 AI 消息
+        function renderAiMessage(text, duration, references = []) {
+            const div = document.createElement('div');
+            div.className = 'message ai';
+            div.innerHTML = marked.parse(text);
 
-                // 更新脚注，移除"正在思考中..."，显示实际耗时
-                const footnote = lastAiMessageElement.querySelector('.footnote');
-                if (footnote) {
-                    footnote.textContent = `推理耗时: ${duration} 秒`;
+            const timestamp = document.createElement('div');
+            timestamp.className = 'timestamp';
+            timestamp.textContent = new Date().toLocaleString();
+            timestamp.style.display = showTimestamps ? 'block' : 'none';
+            div.appendChild(timestamp);
+
+            const footnote = document.createElement('div');
+            footnote.className = 'footnote';
+            footnote.textContent = `推理耗时: ${duration} 秒`;
+            div.appendChild(footnote);
+
+            if (references.length > 0) {
+                const uniqueSources = [...new Set(references.map(r => r.source))];
+                if (uniqueSources.length > 0) {
+                    const refsDiv = document.createElement('div');
+                    refsDiv.className = 'references';
+                    refsDiv.innerHTML = '<strong>参考来源：</strong>';
+                    const ol = document.createElement('ol');
+                    uniqueSources.forEach(s => {
+                        const li = document.createElement('li');
+                        li.textContent = s;
+                        ol.appendChild(li);
+                    });
+                    refsDiv.appendChild(ol);
+                    div.appendChild(refsDiv);
                 }
+            }
 
-                // 清除超时计时器
-                clearTimeoutTimer();
+            messagesContainer.appendChild(div);
+            scrollToBottom();
+        }
 
-                // 重置状态
-                isStreaming = false;
-                currentStreamStartTime = null;
-                lastAiMessageElement = null;
-                accumulatedContent = '';
+        function scrollToBottom() {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
 
-                // 恢复发送按钮状态
+        function sendQuestion() {
+            const question = questionInput.value.trim();
+            if (!question) {
+                showToast('请输入问题', 'error');
+                return;
+            }
+
+            addUserMessage(question);
+            questionInput.value = '';
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span class="loading"></span>思考中';
+
+            startNewStream();
+
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(question);
+            } else {
+                showToast('连接未就绪', 'error');
                 sendBtn.disabled = false;
                 sendBtn.textContent = '发送';
-                questionInput.focus();
+                finalizeStream();
             }
         }
 
-        // 开始新的流式传输
-        function startNewStream() {
-            // 重置状态
-            isStreaming = true;
-            currentStreamStartTime = new Date();
-            lastAiMessageElement = null;
-            accumulatedContent = '';
-
-            // 设置超时计时器
-            setupTimeoutTimer();
-        }
+        // 事件绑定
+        sendBtn.addEventListener('click', sendQuestion);
+        questionInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendQuestion();
+            }
+        });
 
         uploadTrigger.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1047,82 +1040,76 @@
 
         newSessionBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            // 弹出模态框：输入要删除的天数或勾选全部删除
-            showModal({ message: '请选择要删除的范围：\n输入天数将删除该会话早于该天数的记录；勾选「全部删除」将删除整个会话记录', showInput: true, showCheckbox: true, inputPlaceholder: '天数，例如 30' })
+            showModal({
+                message: '请选择删除范围：输入天数删除早期记录，或勾选全部删除整个会话',
+                showInput: true,
+                showCheckbox: true,
+                inputPlaceholder: '天数，例如 30'
+            })
                 .then(res => {
                     if (!res.confirmed) return;
                     const sid = getSessionId();
                     if (!sid) {
-                        showToast('当前没有会话ID，已清除本地会话', 'success');
+                        showToast('无会话ID', 'success');
                         clearSession();
                         return;
                     }
-
                     if (res.all) {
-                        // 删除整个会话
                         fetch('/xx/deleteSession', {
-                            method: 'POST', headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ sessionId: sid })
-                        }).then(r => r.json()).then(data => {
-                            if (data && data.code === 0) {
-                                showToast('服务器会话已删除', 'success');
-                            } else {
-                                showToast('服务器删除失败: ' + (data ? data.message : '未知错误'), 'error');
-                            }
-                        }).catch(err => { console.error(err); showToast('删除失败', 'error'); })
-                            .finally(() => clearSession());
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({sessionId: sid})
+                        })
+                            .then(r => r.json()).then(data => {
+                            if (data && data.code === 0) showToast('会话已删除', 'success');
+                            else showToast('删除失败: ' + (data?.message || '未知'), 'error');
+                        }).catch(() => showToast('删除失败', 'error'))
+                            .finally(clearSession);
                     } else {
-                        // 按天数删除
                         const days = parseInt(res.value, 10);
                         if (isNaN(days) || days <= 0) {
-                            showToast('请输入正整数天数或勾选全部删除', 'error');
+                            showToast('请输入有效天数', 'error');
                             return;
                         }
-                        const before = new Date(); before.setDate(before.getDate() - days);
-                        const beforeDate = before.toISOString().slice(0, 19);
+                        const before = new Date();
+                        before.setDate(before.getDate() - days);
                         fetch('/xx/deleteSessionBefore', {
-                            method: 'POST', headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ sessionId: sid, beforeDate })
-                        }).then(r => r.json()).then(data => {
-                            if (data && data.code === 0) {
-                                showToast('已删除当前会话早期记录', 'success');
-                            } else {
-                                showToast('删除失败: ' + (data ? data.message : '未知错误'), 'error');
-                            }
-                        }).catch(err => { console.error(err); showToast('删除失败', 'error'); })
-                            .finally(() => clearSession());
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({sessionId: sid, beforeDate: before.toISOString().slice(0, 19)})
+                        })
+                            .then(r => r.json()).then(data => {
+                            if (data && data.code === 0) showToast('早期记录已删除', 'success');
+                            else showToast('删除失败', 'error');
+                        }).catch(() => showToast('删除失败', 'error'))
+                            .finally(clearSession);
                     }
                 });
         });
 
         cleanupBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            // 管理员操作：需要密码，删除所有会话记录
-            showModal({ message: '确认：此操作将删除所有会话的所有记录。请输入管理员密码以继续。', showPassword: true })
+            showModal({message: '确认删除所有会话记录？请输入管理员密码', showPassword: true})
                 .then(res => {
-                    if (!res.confirmed) return;
-                    const pwd = res.password;
-                    if (!pwd || pwd.length === 0) {
-                        showToast('请输入管理员密码', 'error');
+                    if (!res.confirmed || !res.password) {
+                        showToast('需输入密码', 'error');
                         return;
                     }
                     fetch('/xx/deleteAllSessions', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ password: pwd })
-                    }).then(r => r.json()).then(data => {
-                        if (data && data.code === 0) {
-                            showToast('所有会话记录已删除', 'success');
-                        } else {
-                            showToast('删除失败: ' + (data ? data.message : '未知错误'), 'error');
-                        }
-                    }).catch(err => { console.error(err); showToast('删除失败，请稍后重试', 'error'); });
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({password: res.password})
+                    })
+                        .then(r => r.json()).then(data => {
+                        if (data && data.code === 0) showToast('所有记录已删除', 'success');
+                        else showToast('删除失败', 'error');
+                    }).catch(() => showToast('删除失败', 'error'));
                 });
         });
 
         timeToggle.addEventListener('change', () => {
             showTimestamps = timeToggle.checked;
-            const timestamps = document.querySelectorAll('.timestamp');
-            timestamps.forEach(ts => {
+            document.querySelectorAll('.timestamp').forEach(ts => {
                 ts.style.display = showTimestamps ? 'block' : 'none';
             });
             showToast(showTimestamps ? '时间显示已开启' : '时间显示已关闭', 'success');
@@ -1147,116 +1134,23 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.code === 0) {
-                        showToast('上传成功！文档已加载', 'success');
+                        showToast('上传成功', 'success');
                         fileInput.value = '';
                     } else {
-                        showToast('上传失败，请稍后重试', 'error');
+                        showToast('上传失败', 'error');
                     }
                 })
-                .catch(() => showToast('上传失败，请检查网络或稍后重试', 'error'))
+                .catch(() => showToast('上传失败', 'error'))
                 .finally(() => {
                     uploadBtn.disabled = false;
                     uploadBtn.textContent = '上传文件';
                 });
         });
 
-        function addUserMessage(text) {
-            const div = document.createElement('div');
-            div.className = 'message user';
-            div.textContent = text;
-            const timestamp = document.createElement('div');
-            timestamp.className = 'timestamp';
-            timestamp.textContent = new Date().toLocaleString();
-            timestamp.style.display = showTimestamps ? 'block' : 'none';
-            div.appendChild(timestamp);
-            messagesContainer.appendChild(div);
-            scrollToBottom();
-        }
-
-        function renderAiMessage(text, duration, references = []) {
-            const div = document.createElement('div');
-            div.className = 'message ai';
-            const html = marked.parse(text);
-            div.innerHTML = html;
-
-            const timestamp = document.createElement('div');
-            timestamp.className = 'timestamp';
-            timestamp.textContent = new Date().toLocaleString();
-            timestamp.style.display = showTimestamps ? 'block' : 'none';
-            div.appendChild(timestamp);
-
-            const footnote = document.createElement('div');
-            footnote.className = 'footnote';
-            footnote.textContent = `推理耗时: ${duration} 秒`;
-            div.appendChild(footnote);
-
-            // 添加尾注形式的参考来源（去重、仅显示文件名）
-            if (references.length > 0) {
-                const uniqueSources = [...new Set(references.map(ref => ref.source))];
-                if (uniqueSources.length > 0) {
-                    const refsDiv = document.createElement('div');
-                    refsDiv.className = 'references';
-                    refsDiv.innerHTML = '<strong>参考来源：</strong>';
-                    const ol = document.createElement('ol');
-                    uniqueSources.forEach(source => {
-                        const li = document.createElement('li');
-                        li.textContent = source;
-                        ol.appendChild(li);
-                    });
-                    refsDiv.appendChild(ol);
-                    div.appendChild(refsDiv);
-                }
-            }
-
-            messagesContainer.appendChild(div);
-            scrollToBottom();
-        }
-
-        function scrollToBottom() {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-        function sendQuestion() {
-            const question = questionInput.value.trim();
-            if (!question) {
-                showToast('请输入问题', 'error');
-                return;
-            }
-
-            // 添加用户消息到界面
-            addUserMessage(question);
-            questionInput.value = '';
-            sendBtn.disabled = true;
-            sendBtn.innerHTML = '<span class="loading"></span>思考中';
-
-            // 开始新的流式传输
-            startNewStream();
-
-            // 通过WebSocket发送问题
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(question);
-            } else {
-                showToast('WebSocket未连接，请稍后再试', 'error');
-                sendBtn.disabled = false;
-                sendBtn.textContent = '发送';
-                questionInput.focus();
-                // 如果WebSocket未连接，也结束流
-                finalizeStream();
-            }
-        }
-
-        sendBtn.addEventListener('click', sendQuestion);
-        questionInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendQuestion();
-            }
+        document.getElementById('viewDocsTrigger').addEventListener('click', () => {
+            window.open('/docs.html', '_blank');
         });
-    });
-    document.getElementById('viewDocsTrigger').addEventListener('click', () => {
-        window.open('/docs.html', '_blank');
     });
 </script>
 </body>
 </html>
-

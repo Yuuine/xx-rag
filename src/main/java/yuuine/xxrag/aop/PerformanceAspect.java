@@ -1,22 +1,33 @@
 package yuuine.xxrag.aop;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import yuuine.xxrag.aop.config.AopProperties;
 
 @Aspect
 @Component
-@Slf4j
-@ConditionalOnProperty(prefix = "aop", name = "performance-enabled", havingValue = "true", matchIfMissing = true)
+@RequiredArgsConstructor
 public class PerformanceAspect {
 
-    @Around("execution(* yuuine.xxrag.app.application.service..*(..)) || " +
+    private final AopProperties aopProperties;
+
+    // 使用特定的logger名称，以便在logback配置中定向到专用文件
+    private static final org.slf4j.Logger log = 
+        org.slf4j.LoggerFactory.getLogger("yuuine.xxrag.aop.PerformanceAspect");
+
+    @Around(value = "(execution(* yuuine.xxrag.app.application.service..*(..)) || " +
             "execution(* yuuine.xxrag.ingestion.domain.service..*(..)) || " +
-            "execution(* yuuine.xxrag.vector.domain.embedding.service..*(..))")
+            "execution(* yuuine.xxrag.vector.domain.embedding.service..*(..))) " +
+            "&& !within(yuuine.xxrag.websocket..*)")
     public Object monitor(ProceedingJoinPoint joinPoint) throws Throwable {
+
+        // 检查是否启用了性能监控
+        if (!aopProperties.isPerformanceEnabled()) {
+            return joinPoint.proceed();
+        }
 
         String className = joinPoint.getTarget().getClass().getSimpleName();
         String methodName = joinPoint.getSignature().getName();
