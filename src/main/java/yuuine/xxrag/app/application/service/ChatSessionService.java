@@ -88,22 +88,36 @@ public class ChatSessionService {
         scheduler.scheduleAtFixedRate(this::cleanupExpiredSessions, 5, 5, TimeUnit.MINUTES);
     }
 
+    // 统一的规范化方法：去掉连字符并小写化，null -> nll
+    private String normalizeSessionId(String sessionId) {
+        if (sessionId == null) return null;
+        return sessionId.replace("-", "").toLowerCase();
+    }
+
     public SessionCache getSession(String sessionId) {
-        return sessionCache.computeIfAbsent(sessionId, SessionCache::new);
+        if (sessionId == null) return null;
+        String sid = normalizeSessionId(sessionId);
+        return sessionCache.computeIfAbsent(sid, SessionCache::new);
     }
 
     public void addMessageToSession(String sessionId, String role, String content) {
-        SessionCache session = getSession(sessionId);
-        ChatHistory message = new ChatHistory(null, sessionId, role, content, LocalDateTime.now());
+        if (sessionId == null) {
+            log.warn("尝试向 null 会话添加消息，忽略操作");
+            return;
+        }
+
+        String sid = normalizeSessionId(sessionId);
+        SessionCache session = getSession(sid);
+        ChatHistory message = new ChatHistory(null, sid, role, content, LocalDateTime.now());
 
         synchronized (session.getLock()) {
             session.addPendingMessage(message);
         }
 
-        log.debug("添加消息到会话 {} (缓存)，角色: {}, 内容长度: {}", sessionId, role, content.length());
+        log.debug("添加消息到会话 {} (缓存)，角色: {}, 内容长度: {}", sid, role, content.length());
 
         if (session.shouldFlush(flushThreshold)) {
-            flushSession(sessionId);
+            flushSession(sid);
         }
     }
 
@@ -116,7 +130,11 @@ public class ChatSessionService {
     }
 
     public void flushSession(String sessionId) {
-        SessionCache session = sessionCache.get(sessionId);
+        if (sessionId == null) return;
+
+        String sid = normalizeSessionId(sessionId);
+
+        SessionCache session = sessionCache.get(sid);
         if (session == null) {
             return;
         }
@@ -131,21 +149,22 @@ public class ChatSessionService {
         }
 
         try {
-            ChatSession dbSession = new ChatSession(sessionId, session.getCreatedAt(), session.getLastAccessTime());
+            ChatSession dbSession = new ChatSession(sid, session.getCreatedAt(), session.getLastAccessTime());
             chatSessionMapper.saveOrUpdateSession(dbSession);
 
             for (ChatHistory message : messagesToFlush) {
+                message.setSessionId(sid);
                 chatHistoryMapper.save(message);
             }
 
-            log.debug("会话 {} 刷新 {} 条消息到数据库完成", sessionId, messagesToFlush.size());
+            log.debug("会话 {} 刷新 {} 条消息到数据库完成", sid, messagesToFlush.size());
 
         } catch (Exception e) {
             // 失败时回滚清空操作
             synchronized (session.getLock()) {
                 session.getPendingMessages().addAll(messagesToFlush);
             }
-            log.error("会话 {} 刷新到数据库失败，消息已恢复到缓存", sessionId, e);
+            log.error("会话 {} 刷新到数据库失败，消息已恢复到缓存", sid, e);
         }
     }
 
@@ -177,13 +196,17 @@ public class ChatSessionService {
     }
 
     public List<InferenceRequest.Message> getSessionHistory(String sessionId, int maxMessages) {
-        SessionCache session = getSession(sessionId);
-        session.updateLastAccessTime();  // 读取历史时更新访问时间
+        if (sessionId == null) return new ArrayList<>();
+
+        String sid = normalizeSessionId(sessionId);
+
+        SessionCache session = getSession(sid);
+        if (session != null) session.updateLastAccessTime();  // 读取历史时更新访问时间
 
         List<InferenceRequest.Message> messages = new ArrayList<>();
 
         // 从数据库获取最新限制数量的历史记录
-        List<ChatHistory> dbMessages = chatHistoryMapper.findBySessionIdWithLimit(sessionId, maxMessages);
+        List<ChatHistory> dbMessages = chatHistoryMapper.findBySessionIdWithLimit(sid, maxMessages);
 
         // 反转恢复时间顺序
         for (int i = dbMessages.size() - 1; i >= 0; i--) {
@@ -192,7 +215,7 @@ public class ChatSessionService {
         }
 
         // 缓存部分（无锁读取，CopyOnWriteArrayList 支持高效并发读）
-        List<ChatHistory> cachedMessages = session.getPendingMessages();
+        List<ChatHistory> cachedMessages = session != null ? session.getPendingMessages() : new ArrayList<>();
 
         if (cachedMessages.size() + messages.size() <= maxMessages) {
             for (ChatHistory cached : cachedMessages) {
@@ -216,19 +239,25 @@ public class ChatSessionService {
     }
 
     public void clearSessionCache(String sessionId) {
-        SessionCache session = sessionCache.get(sessionId);
+        if (sessionId == null) return;
+
+        String sid = normalizeSessionId(sessionId);
+
+        SessionCache session = sessionCache.get(sid);
         if (session != null) {
             synchronized (session.getLock()) {
                 session.getPendingMessages().clear();
             }
-            log.debug("已清除会话 {} 的内存待刷消息", sessionId);
+            log.debug("已清除会话 {} 的内存待刷消息", sid);
         }
     }
 
     public void deleteSessionBefore(String sessionId, LocalDateTime beforeDate) {
         if (sessionId == null || beforeDate == null) return;
 
-        SessionCache session = sessionCache.get(sessionId);
+        String sid = normalizeSessionId(sessionId);
+
+        SessionCache session = sessionCache.get(sid);
         if (session != null) {
             synchronized (session.getLock()) {
                 session.getPendingMessages().removeIf(msg -> msg.getCreatedAt().isBefore(beforeDate));
@@ -237,20 +266,24 @@ public class ChatSessionService {
         }
 
         try {
-            chatHistoryMapper.deleteBySessionIdAndDate(sessionId, beforeDate);
-            log.debug("已删除会话 {} 中 {} 之前的历史记录", sessionId, beforeDate);
+            chatHistoryMapper.deleteBySessionIdAndDate(sid, beforeDate);
+            log.debug("已删除会话 {} 中 {} 之前的历史记录", sid, beforeDate);
         } catch (Exception e) {
-            log.error("删除会话 {} 的历史时出错", sessionId, e);
+            log.error("删除会话 {} 的历史时出错", sid, e);
             throw e;
         }
     }
 
     public void deleteSession(String sessionId) {
-        clearSessionCache(sessionId);
-        chatHistoryMapper.deleteBySessionId(sessionId);
-        chatSessionMapper.deleteSession(sessionId);
-        sessionCache.remove(sessionId);
-        log.debug("会话 {} 及其所有历史已删除", sessionId);
+        if (sessionId == null) return;
+
+        String sid = normalizeSessionId(sessionId);
+
+        clearSessionCache(sid);
+        chatHistoryMapper.deleteBySessionId(sid);
+        chatSessionMapper.deleteSession(sid);
+        sessionCache.remove(sid);
+        log.debug("会话 {} 及其所有历史已删除", sid);
     }
 
     public void deleteAllSessions() {
