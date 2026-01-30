@@ -25,4 +25,12 @@
         DELETE FROM rag_sessions
     </delete>
 
+
+    <!-- 查找超过指定时间未更新的会话 -->
+    <select id="findInactiveSessions" parameterType="LocalDateTime" resultType="string">
+        SELECT session_id
+        FROM rag_sessions
+        WHERE updated_at &lt; #{cutoffDate}
+    </select>
+
 </mapper>

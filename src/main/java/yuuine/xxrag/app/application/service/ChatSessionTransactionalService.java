@@ -56,4 +56,30 @@ public class ChatSessionTransactionalService {
         int result2 = chatSessionMapper.deleteAll();
         log.debug("已删除{}条历史记录和{}个会话", result1, result2);
     }
+
+    /**
+     * 查找超过指定时间未更新的会话
+     */
+    public List<String> findInactiveSessions(LocalDateTime cutoffDate) {
+        return chatSessionMapper.findInactiveSessions(cutoffDate);
+    }
+
+    /**
+     * 根据会话ID列表批量删除会话及历史记录
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void batchDeleteSessions(List<String> sessionIds) {
+        if (sessionIds == null || sessionIds.isEmpty()) {
+            return;
+        }
+
+        for (String sessionId : sessionIds) {
+            try {
+                deleteSessionAndHistories(sessionId);
+                log.debug("已删除过期会话：{}", sessionId);
+            } catch (Exception e) {
+                log.error("删除过期会话 {} 时发生错误", sessionId, e);
+            }
+        }
+    }
 }
