@@ -167,6 +167,43 @@ Spring modulith 模块化设计
 4. **文档管理服务**：负责文档元数据管理
 5. **应用服务**：协调各组件，提供统一 API
 
+## 新人上手建议
+
+### 1. 先理解主链路（上传 -> 检索 -> 回答）
+
+建议先按下面顺序读代码：
+
+1. `RagController`：看 HTTP 接口都暴露了哪些能力（上传、删除、会话管理）。
+2. `AppApi` / `AppApiImpl`：看应用层如何编排上传、检索与推理。
+3. `FileUploadProcessingService`：理解文档上传后如何进入解析、向量化和 MySQL 元数据落库。
+4. `SearchInferenceService`：理解 query 如何经过检索、构造 prompt、流式推理并通过 WebSocket 回传。
+
+### 2. 再分模块深入
+
+- ingestion 模块：重点看 `DocumentIngestionApiImpl` 与 parser/chunker，理解“文件 -> chunk”流程。
+- vector 模块：重点看 `VectorApiImpl`、`VectorSearchService`、`RagRetrievalService`、`RagHybridSearchService`，理解 embedding、kNN、BM25、RRF 融合。
+- inference 模块：重点看 `InferenceService` 和 `InferenceServiceImpl`，理解模型调用参数与流式返回。
+- session 模块：重点看 `ChatSessionService`，理解内存缓存、批量落库、过期清理策略。
+
+### 3. 最后熟悉配置与部署
+
+- `application.yml`：掌握检索参数、分块参数、历史消息策略等关键开关。
+- `docker-compose.yml`：理解本地依赖（MySQL / ES / RabbitMQ / app）如何协同启动。
+- `docs/api.md`：对照接口文档用 Postman 或前端页面验证链路。
+
+### 4. 推荐学习顺序（1~2 周）
+
+- 第 1-2 天：跑通环境、上传样例文档、体验问答链路。
+- 第 3-5 天：精读 ingestion + vector（能解释每一步输入/输出）。
+- 第 6-7 天：精读 inference + chat session（能独立定位对话问题）。
+- 第 2 周：尝试小改动（如 chunk 大小、top-k、prompt），并记录对效果的影响。
+
+### 5. 常见踩坑提醒
+
+- ES 9.1.4 + ik 分词器版本必须对应，否则索引与检索会异常。
+- API Key 缺失时 embedding / 推理会直接失败，先检查环境变量。
+- 会话 ID 在 WebSocket 中有规范化逻辑（有/无短横线 UUID），调试时注意 session 映射。
+
 ## 环境要求
 
 - Java 17

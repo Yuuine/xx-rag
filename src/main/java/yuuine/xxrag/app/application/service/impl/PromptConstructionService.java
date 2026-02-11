@@ -90,10 +90,10 @@ public class PromptConstructionService {
      */
     public String buildIntentDetectionPrompt() {
         return """
-                请判断以下用户输入属于哪一类意图：
+                请判断用户输入属于哪一类意图：
                 知识查询：用户希望获取事实、操作步骤、定义、解释等具体信息。
                 闲聊：用户进行问候、情感表达、无明确信息需求的对话。
-                用户输入：%s
+                用户输入会在接下来的 user 消息中给出。
                 你只需返回"闲聊"或者"知识查询"，不要返回除了这两个词语以外的任何内容。
                 """;
     }
