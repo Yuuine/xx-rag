@@ -1,6 +1,8 @@
 package yuuine.xxrag.app.application.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import yuuine.xxrag.app.domain.model.ChatHistory;
@@ -20,11 +22,15 @@ public class ChatSessionTransactionalService {
 
     private final ChatSessionMapper chatSessionMapper;
     private final ChatHistoryMapper chatHistoryMapper;
-    private final ChatSessionTransactionalService self;
+    private ChatSessionTransactionalService self;
 
-    public ChatSessionTransactionalService(ChatSessionMapper chatSessionMapper, ChatHistoryMapper chatHistoryMapper, ChatSessionTransactionalService self) {
+    public ChatSessionTransactionalService(ChatSessionMapper chatSessionMapper, ChatHistoryMapper chatHistoryMapper) {
         this.chatSessionMapper = chatSessionMapper;
         this.chatHistoryMapper = chatHistoryMapper;
+    }
+
+    @Autowired
+    public void setSelf(@Lazy ChatSessionTransactionalService self) {
         this.self = self;
     }
 
