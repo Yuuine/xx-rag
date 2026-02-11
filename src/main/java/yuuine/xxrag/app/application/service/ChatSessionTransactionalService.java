@@ -67,25 +67,6 @@ public class ChatSessionTransactionalService {
     }
 
     /**
-     * 根据会话ID列表批量删除会话及历史记录
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public void batchDeleteSessions(List<String> sessionIds) {
-        if (sessionIds == null || sessionIds.isEmpty()) {
-            return;
-        }
-
-        for (String sessionId : sessionIds) {
-            try {
-                deleteSessionAndHistories(sessionId);
-                log.debug("已删除过期会话：{}", sessionId);
-            } catch (Exception e) {
-                log.error("删除过期会话 {} 时发生错误", sessionId, e);
-            }
-        }
-    }
-
-    /**
      * 异步批量删除会话
      */
     public void batchDeleteSessionsAsync(List<String> sessionIds) {

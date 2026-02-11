@@ -16,8 +16,8 @@ public final class TraceContext {
         STACK.get().push(node);
     }
 
-    public static TraceNode pop() {
-        return STACK.get().pop();
+    public static void pop() {
+        STACK.get().pop();
     }
 
     public static boolean isEmpty() {
