@@ -4,7 +4,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.modulith.NamedInterface;
 import org.springframework.stereotype.Service;
 import yuuine.xxrag.app.config.ChatHistoryProperties;
@@ -28,11 +27,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @NamedInterface("chatSessionService")
 public class ChatSessionService {
 
-    @Value("${app.chat.history.flush-threshold:10}")
-    private int flushThreshold;
-
-    @Value("${app.chat.session.expiry-minutes:30}")
-    private int sessionExpiryMinutes;
+    private int flushThreshold = 10;
+    private int sessionExpiryMinutes = 30;
 
     @Data
     public static class SessionCache {
@@ -82,6 +78,10 @@ public class ChatSessionService {
 
     @PostConstruct
     public void init() {
+        if (chatHistoryProperties != null) {
+            flushThreshold = chatHistoryProperties.getFlushThreshold();
+            sessionExpiryMinutes = chatHistoryProperties.getSessionExpiryMinutes();
+        }
         scheduler.scheduleAtFixedRate(this::flushPendingSessions, 60, 120, TimeUnit.SECONDS);
         scheduler.scheduleAtFixedRate(this::cleanupExpiredSessions, 5, 5, TimeUnit.MINUTES);
     }
