@@ -1,6 +1,7 @@
 package yuuine.xxrag.app.application.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,7 @@ public class SessionCleanupService {
      * 每三小时执行一次
      */
     @Scheduled(cron = "0 0 */3 * * ?")
+    @Async
     public void cleanupInactiveSessions() {
         log.info("开始执行清理长期未活动会话的任务");
 
@@ -42,10 +44,10 @@ public class SessionCleanupService {
 
             log.info("发现 {} 个超过一个月未活动的会话，开始清理", inactiveSessions.size());
 
-            // 批量删除这些会话
-            chatSessionTransactionalService.batchDeleteSessions(inactiveSessions);
+            // 异步批量删除这些会话
+            chatSessionTransactionalService.batchDeleteSessionsAsync(inactiveSessions);
 
-            log.info("清理完成，共删除 {} 个长期未活动的会话", inactiveSessions.size());
+            log.info("清理任务已提交，共 {} 个长期未活动的会话正在异步删除", inactiveSessions.size());
 
         } catch (Exception e) {
             log.error("清理长期未活动会话时发生错误", e);

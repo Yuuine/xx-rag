@@ -20,10 +20,12 @@ public class ChatSessionTransactionalService {
 
     private final ChatSessionMapper chatSessionMapper;
     private final ChatHistoryMapper chatHistoryMapper;
+    private final ChatSessionTransactionalService self;
 
-    public ChatSessionTransactionalService(ChatSessionMapper chatSessionMapper, ChatHistoryMapper chatHistoryMapper) {
+    public ChatSessionTransactionalService(ChatSessionMapper chatSessionMapper, ChatHistoryMapper chatHistoryMapper, ChatSessionTransactionalService self) {
         this.chatSessionMapper = chatSessionMapper;
         this.chatHistoryMapper = chatHistoryMapper;
+        this.self = self;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -81,5 +83,24 @@ public class ChatSessionTransactionalService {
                 log.error("删除过期会话 {} 时发生错误", sessionId, e);
             }
         }
+    }
+
+    /**
+     * 异步批量删除会话
+     */
+    public void batchDeleteSessionsAsync(List<String> sessionIds) {
+        if (sessionIds == null || sessionIds.isEmpty()) {
+            return;
+        }
+
+        // 使用并行流异步处理删除操作
+        sessionIds.parallelStream().forEach(sessionId -> {
+            try {
+                self.deleteSessionAndHistories(sessionId);
+                log.debug("已异步删除过期会话：{}", sessionId);
+            } catch (Exception e) {
+                log.error("异步删除过期会话 {} 时发生错误", sessionId, e);
+            }
+        });
     }
 }
