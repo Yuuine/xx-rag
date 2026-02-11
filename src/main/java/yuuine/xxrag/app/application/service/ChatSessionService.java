@@ -9,9 +9,7 @@ import org.springframework.modulith.NamedInterface;
 import org.springframework.stereotype.Service;
 import yuuine.xxrag.app.config.ChatHistoryProperties;
 import yuuine.xxrag.app.domain.model.ChatHistory;
-import yuuine.xxrag.app.domain.model.ChatSession;
 import yuuine.xxrag.app.domain.repository.ChatHistoryMapper;
-import yuuine.xxrag.app.domain.repository.ChatSessionMapper;
 import yuuine.xxrag.dto.request.InferenceRequest;
 
 import java.time.LocalDateTime;
@@ -70,15 +68,13 @@ public class ChatSessionService {
 
     private final Map<String, SessionCache> sessionCache = new ConcurrentHashMap<>();
 
-    private final ChatSessionMapper chatSessionMapper;
     private final ChatHistoryMapper chatHistoryMapper;
     private final ChatHistoryProperties chatHistoryProperties;
     private final ChatSessionTransactionalService chatSessionTransactionalService;
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
 
-    public ChatSessionService(ChatSessionMapper chatSessionMapper, ChatHistoryMapper chatHistoryMapper, ChatHistoryProperties chatHistoryProperties, ChatSessionTransactionalService chatSessionTransactionalService) {
-        this.chatSessionMapper = chatSessionMapper;
+    public ChatSessionService(ChatHistoryMapper chatHistoryMapper, ChatHistoryProperties chatHistoryProperties, ChatSessionTransactionalService chatSessionTransactionalService) {
         this.chatHistoryMapper = chatHistoryMapper;
         this.chatHistoryProperties = chatHistoryProperties;
         this.chatSessionTransactionalService = chatSessionTransactionalService;
@@ -90,7 +86,6 @@ public class ChatSessionService {
         scheduler.scheduleAtFixedRate(this::cleanupExpiredSessions, 5, 5, TimeUnit.MINUTES);
     }
 
-    // 统一的规范化方法：去掉连字符并小写化，null -> nll
     private String normalizeSessionId(String sessionId) {
         if (sessionId == null) return null;
         return sessionId.replace("-", "").toLowerCase();
