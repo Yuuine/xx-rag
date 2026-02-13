@@ -112,9 +112,7 @@ jobs:
 
     - name: Wait for services to be ready
       run: |
-        timeout 60 bash -c 'until curl -s http://localhost:9200; do sleep 5; done'
-        timeout 60 bash -c 'until mysqladmin ping -h localhost -u root -prootpassword; do sleep 5; done'
-
+        timeout 60 bash -c 'until curl -s http://localhost:9200/_cluster/health | grep -q \"status\":\"green\"; do sleep 5; done'
     - name: Create Elasticsearch index
       run: |
         curl -X PUT "localhost:9200/rag_chunks" -H 'Content-Type: application/json' -d'
@@ -150,14 +148,12 @@ jobs:
     - name: Run integration tests
       run: mvn -B verify --file pom.xml
       env:
-        SPRING_PROFILES_ACTIVE: test
+        MYSQL_ROOT_PASSWORD: rootpassword
+        ES_PASSWORD: ""
         DB_HOST: localhost
         DB_PORT: 3306
         DB_NAME: rag
         DB_USERNAME: root
-        DB_PASSWORD: rootpassword
-        ES_HOST: localhost
-        ES_PORT: 9200
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
@@ -166,6 +162,8 @@ jobs:
         files: |
           **/target/surefire-reports/TEST-*.xml
           **/target/failsafe-reports/TEST-*.xml
+        check_name: 'Test Results'
+        comment_mode: 'off'
 
   docker-deployment-test:
     runs-on: ubuntu-latest

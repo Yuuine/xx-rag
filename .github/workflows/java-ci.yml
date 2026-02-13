@@ -36,8 +36,7 @@ jobs:
 
     - name: Validate Maven wrapper
       run: |
-        chmod +x ./mvnw
-        ./mvnw --version
+        mvn --version
 
     - name: Compile project
       run: mvn -B compile --file pom.xml
