@@ -1,11 +1,9 @@
 package yuuine.xxrag.dto.response;
 
 import lombok.Data;
-import org.springframework.modulith.NamedInterface;
 
 import java.util.List;
 
-@NamedInterface("IngestResponse")
 @Data
 public class IngestResponse {
 

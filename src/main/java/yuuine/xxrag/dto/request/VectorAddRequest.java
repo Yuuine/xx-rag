@@ -3,12 +3,10 @@ package yuuine.xxrag.dto.request;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.modulith.NamedInterface;
 
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
-@NamedInterface("vectorAddRequest")
 public class VectorAddRequest {
 
     private String chunkId;

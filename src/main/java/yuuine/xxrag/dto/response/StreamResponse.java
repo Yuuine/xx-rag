@@ -4,13 +4,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.modulith.NamedInterface;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@NamedInterface("StreamResponse")
 public class StreamResponse {
 
     private String content; // 每次推送的实际文本片段

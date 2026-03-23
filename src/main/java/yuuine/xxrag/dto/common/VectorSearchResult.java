@@ -1,10 +1,8 @@
 package yuuine.xxrag.dto.common;
 
 import lombok.Data;
-import org.springframework.modulith.NamedInterface;
 
 @Data
-@NamedInterface("VectorSearchResult")
 public class VectorSearchResult {
 
     private String chunkId;

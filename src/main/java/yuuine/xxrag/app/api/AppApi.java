@@ -1,13 +1,11 @@
 package yuuine.xxrag.app.api;
 
-import org.springframework.modulith.NamedInterface;
 import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.dto.common.Result;
 
-import java.util.List;
 import java.time.LocalDateTime;
+import java.util.List;
 
-@NamedInterface("app-api")
 public interface AppApi {
 
     /**

@@ -1,14 +1,12 @@
 package yuuine.xxrag.vector.api;
 
-import org.springframework.modulith.NamedInterface;
-import yuuine.xxrag.dto.request.VectorAddRequest;
 import yuuine.xxrag.dto.common.VectorAddResult;
 import yuuine.xxrag.dto.common.VectorSearchResult;
+import yuuine.xxrag.dto.request.VectorAddRequest;
 
 import java.io.IOException;
 import java.util.List;
 
-@NamedInterface("vector-api")
 public interface VectorApi {
 
     /**

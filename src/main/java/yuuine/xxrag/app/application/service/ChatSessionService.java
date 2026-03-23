@@ -4,7 +4,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.modulith.NamedInterface;
 import org.springframework.stereotype.Service;
 import yuuine.xxrag.app.config.ChatHistoryProperties;
 import yuuine.xxrag.app.domain.model.ChatHistory;
@@ -24,7 +23,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Service
 @Slf4j
-@NamedInterface("chatSessionService")
 public class ChatSessionService {
 
     // 会话管理常量

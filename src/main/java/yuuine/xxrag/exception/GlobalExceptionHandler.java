@@ -3,6 +3,7 @@ package yuuine.xxrag.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.connector.ClientAbortException;
+import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
@@ -23,31 +24,20 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({BusinessException.class, IngestionBusinessException.class})
     @ResponseStatus(HttpStatus.OK)
-    public Result<Object> handleBusinessException(RuntimeException e) {
-        int code;
-        String message;
-        
-        if (e instanceof BusinessException businessException) {
-            code = businessException.getCode();
-            message = businessException.getMessage();
-        } else if (e instanceof IngestionBusinessException ingestionException) {
-            code = ingestionException.getCode();
-            message = ingestionException.getMessage();
-        } else {
-            code = 1;
-            message = e.getMessage();
-        }
-        
-        log.warn("业务异常 [code={}]: {}", code, message);
-        return Result.error(code, message);
+    public Result<Object> handleBusinessException(BusinessException e, HttpServletRequest request) {
+        String traceId = MDC.get("traceId");
+        log.warn("业务异常 traceId={}, uri={}, code={}, msg={}",
+                traceId, request.getRequestURI(), e.getCode(), e.getMessage());
+        return Result.error(e.getCode(), e.getMessage());
     }
 
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Result<Object> handleValidationException(Exception e) {
+    @ResponseStatus(HttpStatus.OK)
+    public Result<Object> handleValidationException(Exception e, HttpServletRequest request) {
         Map<String, String> errors = collectValidationErrors(e);
-        log.warn("参数校验失败: {}", errors);
-        return Result.error(400, "参数校验失败");
+        String firstError = errors.values().stream().findFirst().orElse(ErrorCode.BAD_REQUEST.getMessage());
+        log.warn("参数校验失败 traceId={}, uri={}, errors={}", MDC.get("traceId"), request.getRequestURI(), errors);
+        return Result.error(ErrorCode.BAD_REQUEST.getCode(), firstError);
     }
 
     private Map<String, String> collectValidationErrors(Exception e) {
@@ -67,17 +57,17 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Result<Object> handleIllegalArgumentException(IllegalArgumentException e) {
-        log.warn("非法参数: {}", e.getMessage());
-        return Result.error(400, e.getMessage());
+    @ResponseStatus(HttpStatus.OK)
+    public Result<Object> handleIllegalArgumentException(IllegalArgumentException e, HttpServletRequest request) {
+        log.warn("非法参数 traceId={}, uri={}, msg={}", MDC.get("traceId"), request.getRequestURI(), e.getMessage());
+        return Result.error(ErrorCode.BAD_REQUEST.getCode(), e.getMessage());
     }
 
     @ExceptionHandler(NullPointerException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public Result<Object> handleNullPointerException(NullPointerException e) {
-        log.error("空指针异常", e);
-        return Result.error(500, "系统内部错误");
+    @ResponseStatus(HttpStatus.OK)
+    public Result<Object> handleNullPointerException(NullPointerException e, HttpServletRequest request) {
+        log.error("空指针异常 traceId={}, uri={}", MDC.get("traceId"), request.getRequestURI(), e);
+        return Result.error(ErrorCode.INTERNAL_ERROR.getCode(), ErrorCode.INTERNAL_ERROR.getMessage());
     }
 
     @ExceptionHandler(ClientAbortException.class)
@@ -89,9 +79,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public Result<Object> handleException(Exception e) {
-        log.error("未捕获的异常", e);
-        return Result.error(500, "系统异常，请稍后重试");
+    @ResponseStatus(HttpStatus.OK)
+    public Result<Object> handleException(Exception e, HttpServletRequest request) {
+        log.error("未捕获异常 traceId={}, uri={}", MDC.get("traceId"), request.getRequestURI(), e);
+        return Result.error(ErrorCode.INTERNAL_ERROR.getCode(), "系统异常，请稍后重试");
     }
 }
