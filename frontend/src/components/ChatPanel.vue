@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { marked } from 'marked'
 import { deleteAllSessions, deleteSession, deleteSessionBefore, uploadFiles } from '../api/rag'
 import type { StreamResponse } from '../api/types'
@@ -23,6 +23,7 @@ interface MessageItem {
 
 const SID_LOCALSTORAGE_KEY = 'chat_sid'
 const MESSAGES_LOCALSTORAGE_KEY = 'chat_messages'
+const SHOW_TIMESTAMPS_KEY = 'chat_show_timestamps'
 const MAX_RECONNECT_ATTEMPTS = 5
 const RECONNECT_INTERVAL = 3000
 
@@ -50,12 +51,29 @@ renderer.code = (arg: any) => {
 }
 marked.use({ renderer })
 
+function loadShowTimestamps(): boolean {
+  try {
+    const saved = localStorage.getItem(SHOW_TIMESTAMPS_KEY)
+    return saved === 'true'
+  } catch {
+    return false
+  }
+}
+
+function saveShowTimestamps(value: boolean) {
+  try {
+    localStorage.setItem(SHOW_TIMESTAMPS_KEY, String(value))
+  } catch {
+    // ignore
+  }
+}
+
 const state = reactive({
   ws: null as WebSocket | null,
   wsStatus: 'disconnected' as 'connecting' | 'connected' | 'reconnecting' | 'error' | 'disconnected',
   wsReconnectAttempts: 0,
   sessionId: '',
-  showTimestamps: false,
+  showTimestamps: loadShowTimestamps(),
   isStreaming: false,
   streamBuffer: '',
   currentStreamStartTime: 0,
@@ -469,6 +487,11 @@ function onCopyClick(e: MouseEvent) {
     showToast('复制失败', 'error')
   })
 }
+
+// 监听 showTimestamps 变化并保存到 localStorage
+watch(() => state.showTimestamps, (newValue) => {
+  saveShowTimestamps(newValue)
+})
 
 onMounted(() => {
   connectWebSocket()

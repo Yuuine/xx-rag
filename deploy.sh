@@ -42,6 +42,9 @@ if [ -f ".env" ]; then
         fi
     done < .env
     info "已加载 .env 配置"
+else
+    warn "未找到 .env 文件，将使用环境变量或交互式输入"
+    warn "建议创建 .env 文件以简化部署流程"
 fi
 
 # 检查必需的环境变量
@@ -77,6 +80,34 @@ check_required_env_vars() {
 }
 
 # -------------------------------
+# 检查前置条件
+# -------------------------------
+check_prerequisites() {
+    info "检查前置条件..."
+
+    # 检查 mysql-init 目录
+    if [ ! -d "./mysql-init" ]; then
+        warn "未找到 mysql-init 目录，数据库初始化 SQL 可能无法执行"
+        mkdir -p ./mysql-init
+        info "已自动创建 mysql-init 目录"
+    fi
+
+    # 检查 Dockerfile
+    if [ ! -f "Dockerfile" ]; then
+        error "未找到 Dockerfile，无法构建应用镜像"
+        exit 1
+    fi
+
+    # 检查 docker-compose.yml
+    if [ ! -f "docker-compose.yml" ]; then
+        error "未找到 docker-compose.yml，无法启动服务"
+        exit 1
+    fi
+
+    success "前置条件检查通过"
+}
+
+# -------------------------------
 # 检查依赖
 # -------------------------------
 check_dependencies() {
@@ -104,13 +135,21 @@ check_dependencies() {
 # -------------------------------
 check_ports() {
     info "检查端口占用..."
-    for port in 8081 3306 9200; do
+    local ports_in_use=()
+    for port in 8081 3306 9200 9300 5672 15672; do
         if ss -tuln | grep -q ":$port "; then
             warn "端口 $port 已被占用"
+            ports_in_use+=("$port")
         else
             info "端口 $port 可用"
         fi
     done
+
+    if [ ${#ports_in_use[@]} -gt 0 ]; then
+        error "以下端口已被占用: ${ports_in_use[*]}"
+        error "请释放这些端口后重新部署"
+        exit 1
+    fi
 }
 
 # -------------------------------
@@ -205,6 +244,7 @@ show_info() {
 # -------------------------------
 case "${1:-deploy}" in
     deploy)
+        check_prerequisites
         check_required_env_vars
         check_dependencies
         check_ports
