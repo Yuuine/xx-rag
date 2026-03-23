@@ -17,7 +17,13 @@ public class VectorDeleteOutboxRetryScheduler {
 
     @Scheduled(fixedDelay = 60000)
     public void retryFailedEvents() {
-        List<VectorDeleteOutboxEvent> events = outboxService.findRetryableEvents(100);
+        List<VectorDeleteOutboxEvent> events;
+        try {
+            events = outboxService.findRetryableEvents(100);
+        } catch (Exception e) {
+            log.warn("outbox 重试扫描失败，跳过本轮调度", e);
+            return;
+        }
         if (events.isEmpty()) {
             return;
         }

@@ -3,6 +3,8 @@ server:
   jetty:
     connection-idle-timeout: 300000
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: xx-rag
   datasource:

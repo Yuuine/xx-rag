@@ -26,6 +26,7 @@ public class FlowTraceAspect {
                 execution(* yuuine.xxrag..*(..))
                 && !within(yuuine.xxrag.aop.tracing..*)
                 && !within(yuuine.xxrag.aop..*)
+                && !within(yuuine.xxrag.config..*)
                 && !within(yuuine.xxrag.websocket..*)
             """)
     public void applicationFlow() {

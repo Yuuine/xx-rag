@@ -9,13 +9,13 @@ import org.springframework.context.annotation.Configuration;
 @EnableRabbit
 public class RabbitMQConfig {
 
-    public static final String TASK_EXCHANGE = "business.task.exchange";
-    public static final String TASK_QUEUE    = "business.task.queue";
-    public static final String ROUTING_KEY   = "task.process";
+    public static final String TASK_EXCHANGE = "business.task.exchange.v2";
+    public static final String TASK_QUEUE    = "business.task.queue.v2";
+    public static final String ROUTING_KEY   = "task.process.v2";
 
-    public static final String TASK_DLX_EXCHANGE = "business.task.dlx.exchange";
-    public static final String TASK_DLX_QUEUE = "business.task.dlx.queue";
-    public static final String TASK_DLX_ROUTING_KEY = "task.process.dlx";
+    public static final String TASK_DLX_EXCHANGE = "business.task.dlx.exchange.v2";
+    public static final String TASK_DLX_QUEUE = "business.task.dlx.queue.v2";
+    public static final String TASK_DLX_ROUTING_KEY = "task.process.dlx.v2";
 
     @Bean
     public DirectExchange taskExchange() {
