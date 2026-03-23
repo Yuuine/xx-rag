@@ -88,3 +88,6 @@ README.md.bak
 # Trae IDE相关
 .trae/
 
+# Agent相关
+.agents/
+skills-lock.json

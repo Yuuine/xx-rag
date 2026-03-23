@@ -1,0 +1,6 @@
+export { default as IconClose } from './IconClose.vue'
+export { default as IconSearch } from './IconSearch.vue'
+export { default as IconDelete } from './IconDelete.vue'
+export { default as IconChevronLeft } from './IconChevronLeft.vue'
+export { default as IconChevronRight } from './IconChevronRight.vue'
+export { default as IconEmpty } from './IconEmpty.vue'
