@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 import yuuine.xxrag.app.application.service.DocService;
 import yuuine.xxrag.app.application.service.RagIngestService;
 import yuuine.xxrag.app.application.service.RagVectorService;
+import yuuine.xxrag.common.constant.FileConstants;
 import yuuine.xxrag.dto.common.Result;
 import yuuine.xxrag.dto.common.VectorAddResult;
 import yuuine.xxrag.dto.request.VectorAddRequest;
@@ -17,10 +18,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/**
- * 文件上传处理服务组件
- * 负责文件上传、解析、向量化存储等流程
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -30,53 +27,46 @@ public class FileUploadProcessingService {
     private final RagVectorService ragVectorService;
     private final DocService docService;
 
-    /**
-     * 处理文件上传和存储的完整流程
-     */
     public Result<Object> uploadFiles(List<MultipartFile> files) {
+        Result<Object> validationResult = validateFiles(files);
+        if (validationResult != null) {
+            return validationResult;
+        }
+
+        IngestResponse ragIngestResponse = ragIngestService.upload(files);
+        VectorAddResult vectorAddResult = addVectors(ragIngestResponse);
+        saveDocuments(ragIngestResponse);
+
+        log.info("文件上传处理完成，成功: {}, 失败: {}",
+                vectorAddResult.getSuccessChunk(), vectorAddResult.getFailedChunk());
+
+        return Result.success(vectorAddResult);
+    }
+
+    private Result<Object> validateFiles(List<MultipartFile> files) {
         if (files == null || files.isEmpty()) {
             return Result.error("file not null");
         }
-        
-        // 文件类型白名单
-        Set<String> allowedFileTypes = Set.of(
-            "application/pdf",
-            "text/plain",
-            "text/markdown",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/vnd.ms-excel",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        );
-        
-        // 最大文件大小限制（100MB）
-        long maxFileSize = 100 * 1024 * 1024;
-        
-        // 验证文件
+
         for (MultipartFile file : files) {
-            // 检查文件大小
-            if (file.getSize() > maxFileSize) {
+            if (file.getSize() > FileConstants.MAX_FILE_SIZE) {
                 return Result.error("文件大小超过限制（最大100MB）");
             }
-            
-            // 检查文件类型
+
             String contentType = file.getContentType();
-            if (contentType == null || !allowedFileTypes.contains(contentType)) {
+            if (contentType == null || !FileConstants.ALLOWED_FILE_TYPES.contains(contentType)) {
                 return Result.error("不支持的文件类型");
             }
-            
-            // 检查文件是否为空
+
             if (file.isEmpty()) {
                 return Result.error("文件内容为空");
             }
         }
+        return null;
+    }
 
-        // 1. 调用 rag-ingestion 服务，得到 chunk 结果
-        IngestResponse ragIngestResponse = ragIngestService.upload(files);
-
-        // 2. 调用 rag-vector 服务，持久化 chunk
+    private VectorAddResult addVectors(IngestResponse ragIngestResponse) {
         List<IngestResponse.ChunkResponse> chunkResponses = ragIngestResponse.getChunks();
-        //类型转换
         List<VectorAddRequest> chunks = chunkResponses.stream()
                 .map(chunk -> new VectorAddRequest(
                         chunk.getChunkId(),
@@ -87,9 +77,10 @@ public class FileUploadProcessingService {
                         chunk.getCharCount()
                 ))
                 .collect(Collectors.toList());
-        VectorAddResult vectorAddResult = ragVectorService.add(chunks);
+        return ragVectorService.add(chunks);
+    }
 
-        // 3. 提取唯一文件并持久化到 MySQL
+    private void saveDocuments(IngestResponse ragIngestResponse) {
         Set<String> seenMd5s = new HashSet<>();
         for (var chunk : ragIngestResponse.getChunks()) {
             String md5 = chunk.getFileMd5();
@@ -99,10 +90,5 @@ public class FileUploadProcessingService {
             seenMd5s.add(md5);
         }
         log.info("文件 MySQL 持久化完成，共 {} 个文件", seenMd5s.size());
-
-        log.info("文件上传处理完成，成功: {}, 失败: {}",
-                vectorAddResult.getSuccessChunk(), vectorAddResult.getFailedChunk());
-
-        return Result.success(vectorAddResult);
     }
 }

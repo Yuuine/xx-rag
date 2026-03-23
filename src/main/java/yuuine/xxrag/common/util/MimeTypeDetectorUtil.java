@@ -1,52 +1,34 @@
-package yuuine.xxrag.ingestion.utils;
+package yuuine.xxrag.common.util;
 
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import yuuine.xxrag.exception.IngestionBusinessException;
+import yuuine.xxrag.common.constant.FileConstants;
 import yuuine.xxrag.exception.ErrorCode;
+import yuuine.xxrag.exception.IngestionBusinessException;
 
 import java.io.ByteArrayInputStream;
 import java.util.Locale;
-import java.util.Set;
 
 public final class MimeTypeDetectorUtil {
 
     private static final DefaultDetector DETECTOR = new DefaultDetector();
 
-    /**
-     * 允许的 MIME 白名单
-     */
-    private static final Set<String> SUPPORTED_MIME_TYPES = Set.of(
-            "application/pdf",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "application/vnd.ms-excel",
-            "text/plain",
-            "text/markdown"
-    );
-
     private MimeTypeDetectorUtil() {
+        throw new UnsupportedOperationException("工具类不能实例化");
     }
 
-    /**
-     * MIME 探测（优先基于文件扩展名，宽松模式）
-     */
     public static String detectMimeType(String fileName, byte[] fileBytes) {
-
         if (fileBytes == null || fileBytes.length == 0) {
             throw new IngestionBusinessException(ErrorCode.UNSUPPORTED_FILE_TYPE, "文件内容为空");
         }
 
-        // 1. 优先基于扩展名推断 MIME 类型
         String mimeType = getMimeFromExtension(fileName);
 
-        // 如果推断成功且在白名单中，直接返回（宽松检测）
-        if (mimeType != null && SUPPORTED_MIME_TYPES.contains(mimeType)) {
+        if (mimeType != null && FileConstants.ALLOWED_FILE_TYPES.contains(mimeType)) {
             return mimeType;
         }
 
-        // 2. Fallback 到 Tika DefaultDetector（如果扩展名未匹配）
         try (ByteArrayInputStream in = new ByteArrayInputStream(fileBytes)) {
             MediaType mediaType = DETECTOR.detect(in, new Metadata());
             mimeType = normalizeMimeType(mediaType.toString());
@@ -54,8 +36,7 @@ public final class MimeTypeDetectorUtil {
             mimeType = "application/octet-stream";
         }
 
-        // 3. 白名单校验
-        if (!SUPPORTED_MIME_TYPES.contains(mimeType)) {
+        if (!FileConstants.ALLOWED_FILE_TYPES.contains(mimeType)) {
             throw new IngestionBusinessException(
                     ErrorCode.UNSUPPORTED_FILE_TYPE,
                     "不支持的文件类型: " + mimeType + "（文件名: " + fileName + "）"
@@ -65,9 +46,6 @@ public final class MimeTypeDetectorUtil {
         return mimeType;
     }
 
-    /**
-     * 根据文件扩展名推断 MIME 类型
-     */
     private static String getMimeFromExtension(String fileName) {
         if (fileName == null || fileName.isBlank()) {
             return null;
@@ -92,9 +70,6 @@ public final class MimeTypeDetectorUtil {
         return null;
     }
 
-    /**
-     * MIME normalization
-     */
     private static String normalizeMimeType(String mimeType) {
         if (mimeType == null || mimeType.isBlank()) {
             return "application/octet-stream";

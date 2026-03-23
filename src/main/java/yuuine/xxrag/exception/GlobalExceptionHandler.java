@@ -6,6 +6,7 @@ import org.apache.catalina.connector.ClientAbortException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -13,54 +14,58 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import yuuine.xxrag.dto.common.Result;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-/**
- * 统一处理控制器层抛出的异常，返回标准的 Result 响应格式
- */
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
-    /**
-     * 处理业务自定义异常 (统一处理)
-     */
     @ExceptionHandler({BusinessException.class, IngestionBusinessException.class})
-    @ResponseStatus(HttpStatus.OK)  // 业务异常返回 200，便于前端统一处理 Result
+    @ResponseStatus(HttpStatus.OK)
     public Result<Object> handleBusinessException(RuntimeException e) {
+        int code;
+        String message;
+        
         if (e instanceof BusinessException businessException) {
-            log.warn("业务异常 [code={}]: {}", businessException.getCode(), businessException.getMessage());
-            return Result.error(businessException.getCode(), businessException.getMessage());
+            code = businessException.getCode();
+            message = businessException.getMessage();
         } else if (e instanceof IngestionBusinessException ingestionException) {
-            log.warn("业务异常 [code={}]: {}", ingestionException.getCode(), ingestionException.getMessage());
-            return Result.error(ingestionException.getCode(), ingestionException.getMessage());
+            code = ingestionException.getCode();
+            message = ingestionException.getMessage();
+        } else {
+            code = 1;
+            message = e.getMessage();
         }
-        log.warn("未知业务异常: {}", e.getMessage());
-        return Result.error(1, e.getMessage());
+        
+        log.warn("业务异常 [code={}]: {}", code, message);
+        return Result.error(code, message);
     }
 
-    /**
-     * 处理参数校验异常（@Valid / @Validated）
-     */
     @ExceptionHandler({MethodArgumentNotValidException.class, BindException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Result<Object> handleValidationException(Exception e) {
-        Map<String, String> errors = new HashMap<>();
-        if (e instanceof MethodArgumentNotValidException) {
-            ((MethodArgumentNotValidException) e).getBindingResult().getFieldErrors()
-                    .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
-        } else if (e instanceof BindException) {
-            ((BindException) e).getFieldErrors()
-                    .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
-        }
-
+        Map<String, String> errors = collectValidationErrors(e);
         log.warn("参数校验失败: {}", errors);
         return Result.error(400, "参数校验失败");
     }
 
-    /**
-     * 处理非法参数异常
-     */
+    private Map<String, String> collectValidationErrors(Exception e) {
+        Map<String, String> errors = new HashMap<>();
+        List<FieldError> fieldErrors;
+        
+        if (e instanceof MethodArgumentNotValidException validException) {
+            fieldErrors = validException.getBindingResult().getFieldErrors();
+        } else if (e instanceof BindException bindException) {
+            fieldErrors = bindException.getFieldErrors();
+        } else {
+            return errors;
+        }
+        
+        fieldErrors.forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
+        return errors;
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Result<Object> handleIllegalArgumentException(IllegalArgumentException e) {
@@ -68,9 +73,6 @@ public class GlobalExceptionHandler {
         return Result.error(400, e.getMessage());
     }
 
-    /**
-     * 处理空指针异常
-     */
     @ExceptionHandler(NullPointerException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<Object> handleNullPointerException(NullPointerException e) {
@@ -78,21 +80,14 @@ public class GlobalExceptionHandler {
         return Result.error(500, "系统内部错误");
     }
 
-    /**
-     * 处理客户端主动断开连接的异常（如用户取消请求、前端超时等）
-     */
     @ExceptionHandler(ClientAbortException.class)
     public ResponseEntity<Void> handleClientAbortException(ClientAbortException e, HttpServletRequest request) {
         log.debug("客户端中断连接 - URL: {}, Method: {}",
                 request.getRequestURI(),
                 request.getMethod());
-        // 返回空响应，不触发前端错误
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * 处理未捕获的其他异常
-     */
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<Object> handleException(Exception e) {
