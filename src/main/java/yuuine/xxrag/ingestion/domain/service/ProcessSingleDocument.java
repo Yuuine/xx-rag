@@ -27,13 +27,19 @@ public class ProcessSingleDocument {
             // 1. 构建上下文（MD5 / MIME）
             DocumentProcessingContext context = processDocument.processDocument(file);
 
-            // 2. 解析为纯文本
+            // 2. 检查文件大小，对于大文件进行特殊处理
+            long fileSize = file.getSize();
+            if (fileSize > 50 * 1024 * 1024) { // 50MB
+                log.info("Processing large file: {} ({} bytes)", filename, fileSize);
+            }
+
+            // 3. 解析为纯文本
             String plainText = documentParserService.parse(context);
             if (plainText == null || plainText.isBlank()) {
                 log.warn("Parsed text is empty: {}", filename);
             }
 
-            // 3. Chunk
+            // 4. Chunk
             List<Chunk> chunks = chunkService.getChunks(plainText);
             if (chunks.isEmpty()) {
                 log.warn("No chunks generated: {}", filename);

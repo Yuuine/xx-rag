@@ -1,5 +1,6 @@
 package yuuine.xxrag.exception;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.catalina.connector.ClientAbortException;
 import org.springframework.http.HttpStatus;
@@ -11,7 +12,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import yuuine.xxrag.dto.common.Result;
 
-import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,27 +25,18 @@ public class GlobalExceptionHandler {
     /**
      * 处理业务自定义异常 (统一处理)
      */
-    @ExceptionHandler(BusinessException.class)
+    @ExceptionHandler({BusinessException.class, IngestionBusinessException.class})
     @ResponseStatus(HttpStatus.OK)  // 业务异常返回 200，便于前端统一处理 Result
-    public Result<Object> handleBusinessException(BusinessException e) {
-        log.warn("业务异常 [code={}]: {}", e.getCode(), e.getMessage());
-        return Result.error(e.getCode(), e.getMessage());
-    }
-
-    /**
-     * 处理ingestion模块的业务异常
-     */
-    @ExceptionHandler(IngestionBusinessException.class)
-    public ResponseEntity<Result<Object>> handleIngestionBusinessException(IngestionBusinessException e, HttpServletRequest request) {
-        log.warn("业务异常: URL={}, method={}, code={}",
-                request.getRequestURI(),
-                request.getMethod(),
-                e.getErrorCode().getCode(),
-                e);
-
-        Result<Object> result = Result.error(e.getErrorCode().getCode(), e.getMessage());
-
-        return ResponseEntity.badRequest().body(result);
+    public Result<Object> handleBusinessException(RuntimeException e) {
+        if (e instanceof BusinessException businessException) {
+            log.warn("业务异常 [code={}]: {}", businessException.getCode(), businessException.getMessage());
+            return Result.error(businessException.getCode(), businessException.getMessage());
+        } else if (e instanceof IngestionBusinessException ingestionException) {
+            log.warn("业务异常 [code={}]: {}", ingestionException.getCode(), ingestionException.getMessage());
+            return Result.error(ingestionException.getCode(), ingestionException.getMessage());
+        }
+        log.warn("未知业务异常: {}", e.getMessage());
+        return Result.error(1, e.getMessage());
     }
 
     /**

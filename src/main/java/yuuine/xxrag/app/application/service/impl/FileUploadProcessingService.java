@@ -37,6 +37,39 @@ public class FileUploadProcessingService {
         if (files == null || files.isEmpty()) {
             return Result.error("file not null");
         }
+        
+        // 文件类型白名单
+        Set<String> allowedFileTypes = Set.of(
+            "application/pdf",
+            "text/plain",
+            "text/markdown",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "application/vnd.ms-excel",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+        
+        // 最大文件大小限制（100MB）
+        long maxFileSize = 100 * 1024 * 1024;
+        
+        // 验证文件
+        for (MultipartFile file : files) {
+            // 检查文件大小
+            if (file.getSize() > maxFileSize) {
+                return Result.error("文件大小超过限制（最大100MB）");
+            }
+            
+            // 检查文件类型
+            String contentType = file.getContentType();
+            if (contentType == null || !allowedFileTypes.contains(contentType)) {
+                return Result.error("不支持的文件类型");
+            }
+            
+            // 检查文件是否为空
+            if (file.isEmpty()) {
+                return Result.error("文件内容为空");
+            }
+        }
 
         // 1. 调用 rag-ingestion 服务，得到 chunk 结果
         IngestResponse ragIngestResponse = ragIngestService.upload(files);

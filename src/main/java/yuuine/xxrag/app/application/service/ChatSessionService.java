@@ -27,8 +27,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 @NamedInterface("chatSessionService")
 public class ChatSessionService {
 
-    private int flushThreshold = 10;
-    private int sessionExpiryMinutes = 30;
+    // 会话管理常量
+    private static final int DEFAULT_FLUSH_THRESHOLD = 10;
+    private static final int DEFAULT_SESSION_EXPIRY_MINUTES = 30;
+    
+    private int flushThreshold = DEFAULT_FLUSH_THRESHOLD;
+    private int sessionExpiryMinutes = DEFAULT_SESSION_EXPIRY_MINUTES;
 
     @Data
     public static class SessionCache {

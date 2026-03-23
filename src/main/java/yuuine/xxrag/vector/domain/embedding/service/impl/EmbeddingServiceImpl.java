@@ -5,17 +5,19 @@ import com.alibaba.dashscope.embeddings.TextEmbeddingResultItem;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import yuuine.xxrag.dto.common.VectorAddResult;
+import yuuine.xxrag.dto.common.VectorAddResult.VectorChunk;
+import yuuine.xxrag.dto.request.VectorAddRequest;
 import yuuine.xxrag.vector.domain.embedding.model.ResponseResult;
 import yuuine.xxrag.vector.domain.embedding.service.EmbeddingService;
 import yuuine.xxrag.vector.domain.es.model.RagChunkDocument;
-import yuuine.xxrag.dto.request.VectorAddRequest;
-import yuuine.xxrag.dto.common.VectorAddResult;
-import yuuine.xxrag.dto.common.VectorAddResult.VectorChunk;
 import yuuine.xxrag.vector.util.DashScopeEmbeddingUtil;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * EmbeddingService 的实现：
@@ -42,6 +44,12 @@ public class EmbeddingServiceImpl implements EmbeddingService {
      * text-embedding-v4 模型官方规定最大 chunk 数量为 10 个
      */
     private static final int BATCH_SIZE = 10;
+    
+    /**
+     * 嵌入向量缓存，用于避免重复计算
+     * key: 文本内容的哈希值，value: 嵌入向量
+     */
+    private final Map<Integer, float[]> embeddingCache = new ConcurrentHashMap<>();
 
     @Override
     public ResponseResult embedBatch(List<VectorAddRequest> chunks) {
@@ -173,6 +181,15 @@ public class EmbeddingServiceImpl implements EmbeddingService {
             throw new IllegalArgumentException("Query text cannot be null or empty");
         }
 
+        // 计算文本的哈希值作为缓存键
+        int queryHash = query.hashCode();
+        
+        // 检查缓存中是否已有该文本的嵌入向量
+        if (embeddingCache.containsKey(queryHash)) {
+            log.debug("Using cached embedding for query");
+            return embeddingCache.get(queryHash);
+        }
+
         try {
             // 调用 DashScope Embedding API，单条文本也用 list 包裹
             TextEmbeddingResult result = dashScopeEmbeddingUtil.generateEmbeddingResult(List.of(query));
@@ -188,6 +205,10 @@ public class EmbeddingServiceImpl implements EmbeddingService {
             for (int i = 0; i < doubleList.size(); i++) {
                 vector[i] = doubleList.get(i).floatValue();
             }
+
+            // 将结果存入缓存
+            embeddingCache.put(queryHash, vector);
+            log.debug("Cached new embedding for query");
 
             return vector;
 
