@@ -1,0 +1,229 @@
+:root {
+  /* ==========================================
+     Design Tokens - Color System (Light Mode)
+     ========================================== */
+  
+  /* Primary Colors */
+  --ds-color-primary: #0071e3;
+  --ds-color-primary-hover: #0077ed;
+  --ds-color-primary-active: #005ecb;
+  --ds-color-primary-light: rgba(0, 113, 227, 0.1);
+  --ds-color-primary-lighter: rgba(0, 113, 227, 0.05);
+  
+  /* Success Colors */
+  --ds-color-success: #34c759;
+  --ds-color-success-hover: #2db450;
+  --ds-color-success-light: rgba(52, 199, 89, 0.1);
+  
+  /* Warning Colors */
+  --ds-color-warning: #ff9500;
+  --ds-color-warning-hover: #e68500;
+  --ds-color-warning-light: rgba(255, 149, 0, 0.1);
+  
+  /* Error Colors */
+  --ds-color-error: #ff3b30;
+  --ds-color-error-hover: #e6352b;
+  --ds-color-error-light: rgba(255, 59, 48, 0.1);
+  
+  /* Neutral Colors */
+  --ds-color-neutral-50: #f5f5f7;
+  --ds-color-neutral-100: #e8e8ed;
+  --ds-color-neutral-200: #d2d2d7;
+  --ds-color-neutral-300: #86868b;
+  --ds-color-neutral-400: #6e6e73;
+  --ds-color-neutral-500: #424245;
+  --ds-color-neutral-600: #1d1d1f;
+  
+  /* Text Colors */
+  --ds-color-text-primary: var(--ds-color-neutral-600);
+  --ds-color-text-secondary: var(--ds-color-neutral-300);
+  --ds-color-text-tertiary: var(--ds-color-neutral-400);
+  --ds-color-text-inverse: #ffffff;
+  
+  /* Background Colors */
+  --ds-color-bg-primary: #ffffff;
+  --ds-color-bg-secondary: var(--ds-color-neutral-50);
+  --ds-color-bg-tertiary: var(--ds-color-neutral-100);
+  
+  /* Border Colors */
+  --ds-color-border: var(--ds-color-neutral-200);
+  --ds-color-border-light: var(--ds-color-neutral-100);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* ==========================================
+       Design Tokens - Color System (Dark Mode)
+       ========================================== */
+    
+    /* Primary Colors */
+    --ds-color-primary: #0a84ff;
+    --ds-color-primary-hover: #409cff;
+    --ds-color-primary-active: #0066cc;
+    --ds-color-primary-light: rgba(10, 132, 255, 0.15);
+    --ds-color-primary-lighter: rgba(10, 132, 255, 0.08);
+    
+    /* Success Colors */
+    --ds-color-success: #30d158;
+    --ds-color-success-hover: #34c759;
+    --ds-color-success-light: rgba(48, 209, 88, 0.15);
+    
+    /* Warning Colors */
+    --ds-color-warning: #ffd60a;
+    --ds-color-warning-hover: #ffe066;
+    --ds-color-warning-light: rgba(255, 214, 10, 0.15);
+    
+    /* Error Colors */
+    --ds-color-error: #ff453a;
+    --ds-color-error-hover: #ff6b61;
+    --ds-color-error-light: rgba(255, 69, 58, 0.15);
+    
+    /* Neutral Colors */
+    --ds-color-neutral-50: #1c1c1e;
+    --ds-color-neutral-100: #2c2c2e;
+    --ds-color-neutral-200: #3a3a3c;
+    --ds-color-neutral-300: #8e8e93;
+    --ds-color-neutral-400: #aeaeb2;
+    --ds-color-neutral-500: #f2f2f7;
+    --ds-color-neutral-600: #ffffff;
+    
+    /* Text Colors */
+    --ds-color-text-primary: var(--ds-color-neutral-600);
+    --ds-color-text-secondary: var(--ds-color-neutral-400);
+    --ds-color-text-tertiary: var(--ds-color-neutral-300);
+    --ds-color-text-inverse: #1d1d1f;
+    
+    /* Background Colors */
+    --ds-color-bg-primary: #000000;
+    --ds-color-bg-secondary: var(--ds-color-neutral-50);
+    --ds-color-bg-tertiary: var(--ds-color-neutral-100);
+    
+    /* Border Colors */
+    --ds-color-border: var(--ds-color-neutral-200);
+    --ds-color-border-light: var(--ds-color-neutral-100);
+  }
+}
+
+:root {
+  /* ==========================================
+     Design Tokens - Spacing System
+     ========================================== */
+  
+  --ds-space-xs: 4px;
+  --ds-space-sm: 8px;
+  --ds-space-md: 12px;
+  --ds-space-lg: 16px;
+  --ds-space-xl: 24px;
+  --ds-space-2xl: 32px;
+  --ds-space-3xl: 48px;
+  
+  /* ==========================================
+     Design Tokens - Typography System
+     ========================================== */
+  
+  --ds-font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --ds-font-family-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  
+  --ds-font-size-xs: 12px;
+  --ds-font-size-sm: 14px;
+  --ds-font-size-md: 16px;
+  --ds-font-size-lg: 18px;
+  --ds-font-size-xl: 20px;
+  --ds-font-size-2xl: 24px;
+  --ds-font-size-3xl: 32px;
+  
+  --ds-font-weight-regular: 400;
+  --ds-font-weight-medium: 500;
+  --ds-font-weight-semibold: 600;
+  --ds-font-weight-bold: 700;
+  
+  --ds-line-height-tight: 1.2;
+  --ds-line-height-normal: 1.5;
+  --ds-line-height-relaxed: 1.6;
+  
+  /* ==========================================
+     Design Tokens - Border Radius
+     ========================================== */
+  
+  --ds-radius-sm: 8px;
+  --ds-radius-md: 12px;
+  --ds-radius-lg: 18px;
+  --ds-radius-xl: 28px;
+  --ds-radius-full: 9999px;
+  
+  /* ==========================================
+     Design Tokens - Shadows
+     ========================================== */
+  
+  --ds-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --ds-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --ds-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --ds-shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.15);
+  
+  /* ==========================================
+     Design Tokens - Dark Mode Shadows
+     ========================================== */
+  
+  @media (prefers-color-scheme: dark) {
+    --ds-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --ds-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --ds-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+    --ds-shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.6);
+  }
+  
+  /* ==========================================
+     Design Tokens - Transitions
+     ========================================== */
+  
+  --ds-transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --ds-transition-normal: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --ds-transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* ==========================================
+     Design Tokens - Z-Index
+     ========================================== */
+  
+  --ds-z-dropdown: 100;
+  --ds-z-sticky: 200;
+  --ds-z-fixed: 300;
+  --ds-z-modal-backdrop: 400;
+  --ds-z-modal: 500;
+  --ds-z-popover: 600;
+  --ds-z-tooltip: 700;
+  --ds-z-toast: 800;
+  
+  /* ==========================================
+     Compatibility Aliases
+     ========================================== */
+  
+  /* Apple style aliases for backward compatibility */
+  --apple-blue: var(--ds-color-primary);
+  --apple-blue-hover: var(--ds-color-primary-hover);
+  --apple-blue-light: var(--ds-color-primary-light);
+  --apple-success: var(--ds-color-success);
+  --apple-danger: var(--ds-color-error);
+  --apple-warning: var(--ds-color-warning);
+  --apple-gray: var(--ds-color-neutral-300);
+  --apple-gray-light: var(--ds-color-neutral-50);
+  --apple-dark: var(--ds-color-neutral-600);
+  --apple-text: var(--ds-color-text-primary);
+  --apple-text-secondary: var(--ds-color-text-secondary);
+  --apple-bg: var(--ds-color-bg-primary);
+  --apple-bg-secondary: var(--ds-color-bg-secondary);
+  --apple-border: var(--ds-color-border);
+  --apple-border-light: var(--ds-color-border-light);
+  
+  --focus-ring: rgba(0, 113, 227, 0.3);
+  --shadow-sm: var(--ds-shadow-sm);
+  --shadow-md: var(--ds-shadow-md);
+  --shadow-lg: var(--ds-shadow-lg);
+  --shadow-xl: var(--ds-shadow-xl);
+  --transition-fast: var(--ds-transition-fast);
+  --transition-normal: var(--ds-transition-normal);
+  --transition-slow: var(--ds-transition-slow);
+  --radius-sm: var(--ds-radius-sm);
+  --radius-md: var(--ds-radius-md);
+  --radius-lg: var(--ds-radius-lg);
+  --radius-xl: var(--ds-radius-xl);
+  --radius-full: var(--ds-radius-full);
+}
