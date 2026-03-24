@@ -1,3 +1,7 @@
+# ============================================
+# Java / Maven / Spring Boot
+# ============================================
+
 # 构建产物
 target/
 build/
@@ -6,7 +10,7 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-# Maven包装器
+# Maven包装器JAR文件（properties文件需要保留）
 .mvn/wrapper/maven-wrapper.jar
 
 # 日志文件
@@ -16,12 +20,110 @@ logs/
 **/*.log
 **/*.log.*
 
-# 环境变量文件
-.env
-.env.local
-.env.*.local
+# 本地配置文件
+src/main/resources/application-local.yml
+src/main/resources/application-dev.yml
+src/main/resources/application-test.yml
+src/main/resources/application-prod.yml
 
-# IDE相关文件
+# ============================================
+# Python / FastAPI / Machine Learning
+# ============================================
+
+# Python字节码文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Python虚拟环境
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+rerank-service/venv/
+
+# Python分发/打包
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+*.manifest
+*.spec
+
+# pip日志
+pip-log.txt
+pip-delete-this-directory.txt
+
+# 单元测试/覆盖率
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# 机器学习模型文件（大文件）
+*.pth
+*.pt
+*.bin
+*.onnx
+*.h5
+*.pkl
+*.pickle
+*.safetensors
+*.model
+*.weights
+
+# HuggingFace缓存
+.cache/
+.huggingface/
+
+# ============================================
+# Node.js / Vue.js / Frontend
+# ============================================
+
+# 依赖目录
+node_modules/
+jspm_packages/
+
+# 构建产物
+dist/
+dist-ssr/
+*.local
+
+# npm/yarn/pnpm日志
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# npm缓存
+.npm
+.yarn-integrity
+
+# ============================================
+# IDE和编辑器
+# ============================================
+
 ### STS ###
 .apt_generated
 .classpath
@@ -32,7 +134,7 @@ logs/
 .sts4-cache
 
 ### IntelliJ IDEA ###
-.idea
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -41,7 +143,6 @@ out/
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
-/dist/
 /nbdist/
 /.nb-gradle/
 
@@ -49,39 +150,94 @@ out/
 .vscode/
 *.code-workspace
 
+# ============================================
 # 操作系统相关文件
+# ============================================
+
+# macOS
 .DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
 Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# ============================================
+# 环境变量和配置
+# ============================================
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ============================================
+# 临时文件和备份
+# ============================================
 
 # 临时文件
 *.tmp
 *.temp
+*.swp
+*.swo
+*.bak
+*.backup
 .tmp/
 .temp/
 
-# 依赖文件
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
+# ============================================
+# 数据库文件
+# ============================================
 
-# 本地配置文件
-src/main/resources/application-local.yml
-src/main/resources/application-dev.yml
-src/main/resources/application-test.yml
-src/main/resources/application-prod.yml
+*.db
+*.sqlite
+*.sqlite3
+*.sql.bak
+
+# ============================================
+# 压缩文件
+# ============================================
+
+# 仅忽略根目录和构建输出中的压缩文件
+# 不忽略源代码中的必要压缩文件
+/*.jar
+/*.war
+/*.nar
+/*.ear
+/*.zip
+/*.tar.gz
+/*.rar
+target/**/*.jar
+target/**/*.war
+
+# ============================================
+# 测试和文档
+# ============================================
 
 # 测试报告
 /test-results/
 /coverage/
+test-output/
 
 # 文档生成
 /site/
 
+# ============================================
 # 其他
+# ============================================
+
 HELP.md
 README.md.bak
 
@@ -92,5 +248,16 @@ README.md.bak
 .agents/
 skills-lock.json
 
-# model仓库
-rerank-service/
+# ============================================
+# 项目特定忽略规则
+# ============================================
+
+# rerank-service模型目录（大文件）
+rerank-service/models/
+
+# 上传的文件目录
+uploads/
+uploaded-files/
+
+# Elasticsearch数据
+es-data/
