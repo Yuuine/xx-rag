@@ -1,0 +1,28 @@
+name: Sync to Gitee
+
+on:
+  push:
+    branches: [ main ]   #  main 分支的 push
+    tags: '*'            #  tag 同步
+  workflow_dispatch:     # 允许手动触发
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 获取完整历史，用于强制推送
+
+      - name: Push main branch and tags to Gitee
+        env:
+          GITEE_TOKEN: ${{ secrets.GITEE_TOKEN }}
+        run: |
+          git remote add gitee https://oauth2:${GITEE_TOKEN}@gitee.com/Yuuine/xx-rag.git
+          
+          # 只推送 main 分支（强制更新）
+          git push --force gitee main:main
+          
+          # 同步所有 tags
+          git push gitee --tags

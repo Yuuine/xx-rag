@@ -1,0 +1,75 @@
+.workspace-shell {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  background: var(--apple-bg);
+  position: relative;
+}
+
+.chat-main {
+  flex: 1;
+  height: 100%;
+  overflow: hidden;
+  transition: margin-right var(--transition-normal);
+}
+
+/* 遮罩层 */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 999;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 右侧文档抽屉 */
+.docs-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  max-width: 100vw;
+  background: var(--apple-bg);
+  border-left: 1px solid var(--apple-border-light);
+  box-shadow: var(--shadow-xl);
+  transform: translateX(100%);
+  transition: transform var(--transition-slow);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.docs-drawer.open {
+  transform: translateX(0);
+}
+
+/* 移动端适配 */
+@media (max-width: 960px) {
+  .docs-drawer {
+    width: 100vw;
+    border-left: none;
+  }
+}
+
+/* 小屏移动端优化 */
+@media (max-width: 480px) {
+  .docs-drawer {
+    width: 100vw;
+  }
+}
+
+/* 减少动画模式 */
+@media (prefers-reduced-motion: reduce) {
+  .drawer-overlay,
+  .docs-drawer {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

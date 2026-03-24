@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="yuuine.xxrag.app.domain.repository.VectorDeleteOutboxMapper">
+
+    <resultMap id="VectorDeleteOutboxResultMap" type="yuuine.xxrag.app.domain.model.VectorDeleteOutboxEvent">
+        <id property="id" column="id"/>
+        <result property="eventType" column="event_type"/>
+        <result property="payload" column="payload"/>
+        <result property="status" column="status"/>
+        <result property="retryCount" column="retry_count"/>
+        <result property="errorMessage" column="error_message"/>
+        <result property="nextRetryAt" column="next_retry_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="yuuine.xxrag.app.domain.model.VectorDeleteOutboxEvent"
+            useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO rag_outbox_events
+            (event_type, payload, status, retry_count, error_message, next_retry_at, created_at, updated_at)
+        VALUES
+            (#{eventType}, #{payload}, #{status}, #{retryCount}, #{errorMessage}, #{nextRetryAt}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="findById" resultMap="VectorDeleteOutboxResultMap">
+        SELECT id, event_type, payload, status, retry_count, error_message, next_retry_at, created_at, updated_at
+        FROM rag_outbox_events
+        WHERE id = #{id}
+    </select>
+
+    <update id="markPublished">
+        UPDATE rag_outbox_events
+        SET status = 'PUBLISHED',
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+          AND status IN ('NEW', 'FAILED')
+    </update>
+
+    <update id="markSuccess">
+        UPDATE rag_outbox_events
+        SET status = 'SUCCESS',
+            error_message = NULL,
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <update id="markFailed">
+        UPDATE rag_outbox_events
+        SET status = 'FAILED',
+            retry_count = #{retryCount},
+            error_message = #{errorMessage},
+            next_retry_at = #{nextRetryAt},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <select id="findRetryableEvents" resultMap="VectorDeleteOutboxResultMap">
+        SELECT id, event_type, payload, status, retry_count, error_message, next_retry_at, created_at, updated_at
+        FROM rag_outbox_events
+        WHERE status IN ('NEW', 'FAILED')
+          AND (next_retry_at IS NULL OR next_retry_at &lt;= #{now})
+          AND retry_count &lt; 10
+        ORDER BY id ASC
+        LIMIT #{limit}
+    </select>
+
+</mapper>
+

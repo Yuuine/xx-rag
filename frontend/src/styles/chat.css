@@ -1,0 +1,650 @@
+.chat-card {
+  max-width: 900px;
+  margin: 0 auto;
+  background: var(--apple-bg);
+  height: 100vh;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Apple 风格头部 - 重新设计为三栏布局 */
+.chat-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: color-mix(in srgb, var(--apple-bg) 85%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--apple-border-light);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* 左侧 Logo */
+.header-left {
+  flex: 0 0 auto;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-text {
+  font-size: 1.15em;
+  font-weight: 600;
+  color: var(--apple-text);
+  letter-spacing: -0.01em;
+}
+
+/* 中间时间戳开关 */
+.header-center {
+  flex: 0 0 auto;
+}
+
+.time-toggle-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toggle-label {
+  font-size: 0.85em;
+  color: var(--apple-text-secondary);
+  font-weight: 500;
+}
+
+.time-toggle-checkbox {
+  display: none;
+}
+
+.time-toggle-label {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+  background: var(--apple-border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.time-toggle-label:before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  background: var(--apple-bg);
+  border-radius: 50%;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.time-toggle-checkbox:checked + .time-toggle-label {
+  background: var(--apple-blue);
+}
+
+.time-toggle-checkbox:checked + .time-toggle-label:before {
+  transform: translateX(20px);
+}
+
+/* 右侧按钮组 */
+.header-right {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--apple-text-secondary);
+  font-size: 0.9em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.header-btn:hover {
+  background: var(--apple-bg-secondary);
+  color: var(--apple-text);
+}
+
+.header-btn.active {
+  background: var(--apple-blue-light);
+  color: var(--apple-blue);
+}
+
+.header-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.header-btn.stop-btn:hover:not(:disabled) {
+  background: var(--ds-color-error-light);
+  color: var(--apple-danger);
+}
+
+/* 消息区域 */
+.chat-container {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 0;
+}
+
+#messagesContainer {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  scroll-behavior: smooth;
+  min-height: 0;
+}
+
+/* 消息列表 - 关键：使用 align-items: stretch 让子元素控制对齐 */
+.messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+/* Apple 风格消息气泡 */
+.message {
+  max-width: 75%;
+  padding: 14px 20px;
+  border-radius: var(--radius-xl);
+  line-height: 1.6;
+  word-wrap: break-word;
+  position: relative;
+  animation: messageAppear 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.95em;
+}
+
+@keyframes messageAppear {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* 用户消息 - 右对齐 */
+.message.user {
+  align-self: flex-end;
+  background: var(--apple-blue);
+  color: white;
+  border-bottom-right-radius: var(--radius-sm);
+  margin-left: auto;
+}
+
+.message.user ::selection {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+.message.user ::-moz-selection {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+/* 助手消息 - 左对齐 */
+.message.assistant {
+  align-self: flex-start;
+  background: var(--apple-bg-secondary);
+  color: var(--apple-text);
+  border: 1px solid var(--apple-border-light);
+  border-bottom-left-radius: var(--radius-sm);
+  margin-right: auto;
+}
+
+.message-content {
+  line-height: 1.7;
+}
+
+.message-content p {
+  margin: 0 0 12px 0;
+}
+
+.message-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* 代码块样式 */
+.code-block {
+  position: relative;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 6px 12px;
+  background: color-mix(in srgb, var(--apple-bg) 80%, transparent);
+  border: 1px solid var(--apple-border-light);
+  border-radius: var(--radius-sm);
+  color: var(--apple-text-secondary);
+  font-size: 0.8em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  min-height: 32px;
+}
+
+.copy-btn:hover {
+  background: var(--apple-bg);
+  color: var(--apple-text);
+  border-color: var(--apple-border);
+}
+
+.copy-btn.copied {
+  background: var(--ds-color-success-light);
+  color: var(--ds-color-success);
+  border-color: var(--ds-color-success);
+}
+
+/* GitHub 风格代码块 - 亮色主题 */
+.message.assistant pre {
+  background: #f6f8fa;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin: 12px 0;
+  border: 1px solid #d0d7de;
+  font-size: 0.9em;
+  line-height: 1.6;
+}
+
+.message.assistant pre code {
+  font-family: var(--ds-font-family-mono);
+  font-size: inherit;
+  color: #24292f;
+  background: transparent;
+  padding: 0;
+  border: none;
+}
+
+/* 行内代码样式 */
+.message.assistant code {
+  font-family: var(--ds-font-family-mono);
+  font-size: 0.9em;
+  color: #24292f;
+}
+
+.message.assistant p code {
+  background: rgba(175, 184, 193, 0.2);
+  color: #24292f;
+  padding: 0.2em 0.4em;
+  border-radius: 6px;
+  font-size: 0.85em;
+  font-weight: 500;
+  border: none;
+}
+
+/* 暗色模式 - GitHub Dark */
+@media (prefers-color-scheme: dark) {
+  .message.assistant pre {
+    background: #161b22;
+    border: 1px solid #30363d;
+  }
+  
+  .message.assistant pre code {
+    color: #c9d1d9;
+  }
+  
+  .message.assistant p code {
+    background: rgba(110, 118, 129, 0.4);
+    color: #c9d1d9;
+  }
+}
+
+/* 时间戳 */
+.timestamp {
+  font-size: 0.75em;
+  color: var(--apple-text-secondary);
+  margin-top: 6px;
+  opacity: 0.8;
+}
+
+.message.user .timestamp {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.footnote {
+  font-size: 0.75em;
+  color: var(--apple-text-secondary);
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* 引用来源样式 */
+.references {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--apple-border-light);
+  font-size: 0.85em;
+  color: var(--apple-text-secondary);
+}
+
+.references ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.references li {
+  margin: 4px 0;
+}
+
+/* 快捷导航 */
+.quick-nav {
+  position: absolute;
+  right: 24px;
+  bottom: 100px;
+  z-index: 50;
+}
+
+.nav-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--apple-bg);
+  border: 1px solid var(--apple-border-light);
+  box-shadow: var(--shadow-lg);
+  color: var(--apple-text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.nav-btn:hover {
+  background: var(--apple-blue);
+  color: white;
+  border-color: var(--apple-blue);
+  transform: scale(1.1);
+}
+
+/* 底部输入区域 */
+.input-section {
+  padding: 16px 24px 24px;
+  background: color-mix(in srgb, var(--apple-bg) 95%, transparent);
+  border-top: 1px solid var(--apple-border-light);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Apple 风格输入框 */
+#questionInput {
+  flex: 1;
+  padding: 14px 20px;
+  border: 1px solid var(--apple-border);
+  border-radius: var(--radius-full);
+  font-size: 1em;
+  line-height: 1.5;
+  resize: none;
+  min-height: 52px;
+  max-height: 120px;
+  font-family: inherit;
+  background: var(--apple-bg-secondary);
+  color: var(--apple-text);
+  transition: all var(--transition-fast);
+}
+
+#questionInput:hover {
+  border-color: var(--apple-gray);
+}
+
+#questionInput:focus {
+  border-color: var(--apple-blue);
+  outline: none;
+  box-shadow: 0 0 0 4px var(--focus-ring);
+  background: var(--apple-bg);
+}
+
+#questionInput::placeholder {
+  color: var(--apple-text-secondary);
+}
+
+/* Apple 风格发送按钮 */
+.btn-send {
+  width: 52px;
+  height: 52px;
+  background: var(--apple-blue);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.btn-send:hover:not(:disabled) {
+  background: var(--apple-blue-hover);
+  transform: scale(1.05);
+}
+
+.btn-send:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.btn-send:disabled {
+  background: var(--apple-border);
+  color: var(--apple-text-secondary);
+  cursor: not-allowed;
+}
+
+/* 输入光标动画 */
+.typing-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 18px;
+  background: var(--apple-blue);
+  border-radius: 2px;
+  animation: typingBlink 1s infinite;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+@keyframes typingBlink {
+  0%, 49% {
+    opacity: 1;
+  }
+  50%, 100% {
+    opacity: 0;
+  }
+}
+
+/* 加载更多提示 */
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  color: var(--apple-text-secondary);
+  font-size: 0.9em;
+}
+
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--apple-border);
+  border-top-color: var(--apple-blue);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* WebSocket 状态横幅 */
+.ws-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 0.9em;
+}
+
+.ws-banner-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  font-size: 0.85em;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.ws-banner-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .chat-card {
+    min-height: 100vh;
+  }
+
+  .chat-header {
+    padding: 10px 16px;
+    gap: 12px;
+  }
+
+  .logo-text {
+    font-size: 1em;
+  }
+
+  .header-btn span {
+    display: none;
+  }
+
+  .header-btn {
+    padding: 8px;
+  }
+
+  .toggle-label {
+    display: none;
+  }
+
+  .message {
+    max-width: 85%;
+    padding: 12px 16px;
+    font-size: 0.95em;
+  }
+
+  #messagesContainer {
+    padding: 16px;
+  }
+
+  .messages-list {
+    gap: 12px;
+  }
+
+  .input-section {
+    padding: 12px 16px 20px;
+  }
+
+  #questionInput {
+    min-height: 48px;
+    padding: 12px 16px;
+  }
+
+  .btn-send {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chat-header {
+    padding: 10px 12px;
+  }
+
+  .header-right {
+    gap: 4px;
+  }
+
+  .header-btn {
+    padding: 6px;
+  }
+
+  .header-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .message {
+    max-width: 90%;
+  }
+
+  .time-toggle-label {
+    width: 44px;
+    height: 26px;
+  }
+
+  .time-toggle-label:before {
+    width: 22px;
+    height: 22px;
+  }
+
+  .time-toggle-checkbox:checked + .time-toggle-label:before {
+    transform: translateX(18px);
+  }
+}
+
+/* 减少动画模式 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
