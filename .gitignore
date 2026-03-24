@@ -91,3 +91,6 @@ README.md.bak
 # Agent相关
 .agents/
 skills-lock.json
+
+# model仓库
+rerank-service/
