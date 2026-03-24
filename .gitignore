@@ -50,7 +50,6 @@ rerank-service/venv/
 # Python分发/打包
 *.egg-info/
 dist/
-build/
 *.egg
 .eggs/
 *.manifest
@@ -105,7 +104,6 @@ node_modules/
 jspm_packages/
 
 # 构建产物
-dist/
 dist-ssr/
 *.local
 
@@ -261,3 +259,6 @@ uploaded-files/
 
 # Elasticsearch数据
 es-data/
+
+# 本地数据
+data/

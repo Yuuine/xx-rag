@@ -32,7 +32,7 @@ public class ChatSessionService {
 
     private int flushThreshold() {
         int t = chatHistoryProperties.getFlushThreshold();
-        return t < 1 ? 1 : t;
+        return Math.max(t, 1);
     }
 
     @PostConstruct

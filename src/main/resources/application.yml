@@ -103,5 +103,9 @@ logging:
   config: classpath:logback-spring.xml
 
 aop:
-  flow-trace-enabled: true      # 调用方法跟踪
-  performance-enabled: true     # 方法性能监控
+  flow-trace:
+    enabled: true
+    log-root-only: true
+  performance:
+    enabled: true
+    slow-threshold-ms: 1000

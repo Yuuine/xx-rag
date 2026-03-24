@@ -1,6 +1,6 @@
 package yuuine.xxrag.aop;
 
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -12,36 +12,49 @@ import yuuine.xxrag.aop.tracing.ModuleResolver;
 import yuuine.xxrag.aop.tracing.TraceContext;
 import yuuine.xxrag.aop.tracing.TraceNode;
 
+@Slf4j
 @Aspect
 @Component
-@RequiredArgsConstructor
-public class FlowTraceAspect {
-
-    private final AopProperties aopProperties;
+public class FlowTraceAspect extends BaseAspect {
 
     private static final org.slf4j.Logger traceLogger =
-        org.slf4j.LoggerFactory.getLogger("TRACING_LOGGER");
+            org.slf4j.LoggerFactory.getLogger("TRACING_LOGGER");
 
-    @Pointcut("""
-                execution(* yuuine.xxrag..*(..))
-                && !within(yuuine.xxrag.aop.tracing..*)
-                && !within(yuuine.xxrag.aop..*)
-                && !within(yuuine.xxrag.config..*)
-                && !within(yuuine.xxrag.websocket..*)
-            """)
-    public void applicationFlow() {
+    public FlowTraceAspect(AopProperties aopProperties) {
+        super(aopProperties);
     }
 
-    @Around("applicationFlow()")
-    public Object trace(ProceedingJoinPoint pjp) throws Throwable {
+    @Pointcut("""
+            (
+                @annotation(org.springframework.web.bind.annotation.RequestMapping) ||
+                @annotation(org.springframework.web.bind.annotation.GetMapping) ||
+                @annotation(org.springframework.web.bind.annotation.PostMapping) ||
+                @annotation(org.springframework.web.bind.annotation.PutMapping) ||
+                @annotation(org.springframework.web.bind.annotation.DeleteMapping) ||
+                @annotation(org.springframework.web.bind.annotation.PatchMapping)
+            ) && execution(* yuuine.xxrag..*(..))
+            """)
+    public void controllerMethods() {
+    }
 
-        // 检查是否启用了流程追踪
-        if (!aopProperties.isFlowTraceEnabled()) {
+    @Pointcut("""
+            @within(org.springframework.stereotype.Service) &&
+            execution(* yuuine.xxrag..*(..))
+            """)
+    public void serviceMethods() {
+    }
+
+    @Pointcut("controllerMethods() || serviceMethods()")
+    public void traceableMethods() {
+    }
+
+    @Around("traceableMethods()")
+    public Object trace(ProceedingJoinPoint pjp) throws Throwable {
+        if (!aopProperties.getFlowTrace().isEnabled()) {
             return pjp.proceed();
         }
 
         Class<?> type = pjp.getSignature().getDeclaringType();
-
         TraceNode node = new TraceNode(
                 ModuleResolver.resolve(type),
                 LayerResolver.resolve(type),
@@ -54,31 +67,31 @@ public class FlowTraceAspect {
         try {
             TraceContext.push(node);
 
-            // 避免在高频率调用时产生过多日志，只在根节点打印
-            if (root) {
+            if (root && aopProperties.getFlowTrace().isLogRootOnly()) {
                 traceLogger.info("[TRACE] {}", TraceContext.prettyTrace());
             }
 
             return pjp.proceed();
 
         } catch (Throwable throwable) {
-            // 发生异常时也记录追踪信息
             if (root) {
-                traceLogger.error("[TRACE-ERROR] {} - Exception occurred: {}", TraceContext.prettyTrace(), throwable.getMessage());
+                traceLogger.error("[TRACE-ERROR] {} - Exception: {}", 
+                        TraceContext.prettyTrace(), throwable.getMessage());
             }
             throw throwable;
         } finally {
-            // 确保在任何情况下都弹出节点
-            try {
-                TraceContext.pop();
-                if (root) {
-                    // 只有在根节点结束时才清空上下文
-                    TraceContext.clear();
-                }
-            } catch (Exception e) {
-                // 防止在finally块中的异常干扰主流程
-                traceLogger.warn("Error occurred while cleaning up trace context: {}", e.getMessage());
+            cleanupTraceContext(root);
+        }
+    }
+
+    private void cleanupTraceContext(boolean root) {
+        try {
+            TraceContext.pop();
+            if (root) {
+                TraceContext.clear();
             }
+        } catch (Exception e) {
+            traceLogger.warn("Cleanup trace context error: {}", e.getMessage());
         }
     }
 }

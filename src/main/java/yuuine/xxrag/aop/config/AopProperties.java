@@ -9,13 +9,19 @@ import org.springframework.stereotype.Component;
 @Data
 public class AopProperties {
 
-    /**
-     * 是否启用流程追踪功能
-     */
-    private boolean flowTraceEnabled = true;
+    private FlowTrace flowTrace = new FlowTrace();
 
-    /**
-     * 是否启用性能监控功能
-     */
-    private boolean performanceEnabled = true;
+    private Performance performance = new Performance();
+
+    @Data
+    public static class FlowTrace {
+        private boolean enabled = true;
+        private boolean logRootOnly = true;
+    }
+
+    @Data
+    public static class Performance {
+        private boolean enabled = true;
+        private long slowThresholdMs = 1000;
+    }
 }
