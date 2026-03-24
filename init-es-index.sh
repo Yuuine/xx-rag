@@ -32,7 +32,9 @@ curl -X PUT "http://localhost:9200/rag_chunks" -H 'Content-Type: application/jso
         "type": "integer"
       },
       "content": {
-        "type": "text"
+        "type": "text",
+        "analyzer": "ik_max_word",
+        "search_analyzer": "ik_smart"
       },
       "charCount": {
         "type": "integer"

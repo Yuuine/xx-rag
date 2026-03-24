@@ -1,6 +1,5 @@
 package yuuine.xxrag.exception;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
@@ -8,13 +7,10 @@ import lombok.Getter;
  * 用于 Service 层抛出明确的业务错误，便于全局异常处理器统一处理
  */
 @Getter
-@AllArgsConstructor
 public class BusinessException extends RuntimeException {
 
-    /**
-     * 错误码，默认 1 表示业务错误
-     */
     private final int code;
+    private final ErrorCode errorCode;
 
     /**
      * 构造器：使用默认错误码 1
@@ -23,7 +19,20 @@ public class BusinessException extends RuntimeException {
      */
     public BusinessException(String message) {
         super(message);
-        this.code = 1;
+        this.code = ErrorCode.BUSINESS_ERROR.getCode();
+        this.errorCode = ErrorCode.BUSINESS_ERROR;
+    }
+
+    public BusinessException(ErrorCode errorCode) {
+        super(errorCode.getMessage());
+        this.code = errorCode.getCode();
+        this.errorCode = errorCode;
+    }
+
+    public BusinessException(ErrorCode errorCode, String message) {
+        super(message);
+        this.code = errorCode.getCode();
+        this.errorCode = errorCode;
     }
 
 
@@ -35,6 +44,13 @@ public class BusinessException extends RuntimeException {
      */
     public BusinessException(String message, Throwable cause) {
         super(message, cause);
-        this.code = 1;
+        this.code = ErrorCode.BUSINESS_ERROR.getCode();
+        this.errorCode = ErrorCode.BUSINESS_ERROR;
+    }
+
+    public BusinessException(ErrorCode errorCode, String message, Throwable cause) {
+        super(message, cause);
+        this.code = errorCode.getCode();
+        this.errorCode = errorCode;
     }
 }

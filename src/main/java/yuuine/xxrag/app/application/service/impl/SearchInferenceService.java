@@ -45,85 +45,93 @@ public class SearchInferenceService {
         try {
             log.info("开始流式搜索，查询: {}", query);
 
-            // 获取业务会话ID
             String businessSessionId = RagWebSocketHandler.getBusinessSessionId(userDestination);
             if (businessSessionId == null) {
                 log.error("无法获取业务会话ID，WebSocket ID: {}", userDestination);
                 return;
             }
 
-            String queryType = determineQueryType(query);
-            boolean isChitChat = "闲聊".equals(queryType);
+            boolean isChitChat = isChitChatQuery(query);
+            List<VectorSearchResult> contexts = isChitChat ? null : searchContexts(query);
 
-            List<VectorSearchResult> contexts = null;
-            if (!isChitChat) {
-                // 执行向量检索
-                contexts = ragVectorService.search(query);
-                log.debug("向量检索完成，返回结果数量: {}", contexts.size());
-            }
-
-            // 构建包含历史消息的推理请求
             InferenceRequest inferenceRequest = buildInferenceRequestWithHistory(query, contexts, businessSessionId);
-
-            // 执行流式推理
             Flux<ApiChatChunk> stream = inferenceService.streamInfer(inferenceRequest);
 
-            // 处理流式响应
-            StringBuilder fullResponse = new StringBuilder();
-            stream.subscribe(
-                    chunk -> {
-                        if (chunk.getChoices() != null && !chunk.getChoices().isEmpty()) {
-                            ApiChatChunk.Choice choice = chunk.getChoices().get(0);
-                            if (choice.getDelta() != null && choice.getDelta().getContent() != null) {
-                                String content = choice.getDelta().getContent();
-                                fullResponse.append(content);
-
-                                // 发送流式响应到客户端
-                                StreamResponse response = StreamResponse.builder()
-                                        .content(content)
-                                        .finishReason(null)
-                                        .message(null)
-                                        .build();
-                                RagWebSocketHandler.sendMessageToSession(userDestination, response);
-                            }
-                        }
-                    },
-                    error -> {
-                        log.error("流式推理发生错误", error);
-                        StreamResponse errorResponse = StreamResponse.builder()
-                                .content("")
-                                .finishReason(null)
-                                .message("推理过程发生错误: " + error.getMessage())
-                                .build();
-                        RagWebSocketHandler.sendMessageToSession(userDestination, errorResponse);
-                    },
-                    () -> {
-                        // 完成回调
-                        String finalResponse = fullResponse.toString();
-                        log.info("流式推理完成，总响应长度: {}", finalResponse.length());
-
-                        // 添加AI回复到会话历史
-                        chatSessionService.addAssistantMessage(businessSessionId, finalResponse);
-
-                        // 发送完成信号
-                        StreamResponse completeResponse = StreamResponse.builder()
-                                .content("")
-                                .finishReason("stop")
-                                .message(null)
-                                .build();
-                        RagWebSocketHandler.sendMessageToSession(userDestination, completeResponse);
-                    }
-            );
+            processStreamResponse(stream, userDestination, businessSessionId);
 
         } catch (Exception e) {
             log.error("流式搜索初始化失败", e);
-            StreamResponse errorResponse = StreamResponse.builder()
-                    .content("")
-                    .finishReason(null)
-                    .message("初始化失败: " + e.getMessage())
-                    .build();
-            RagWebSocketHandler.sendMessageToSession(userDestination, errorResponse);
+            sendErrorResponse(userDestination, "初始化失败: " + e.getMessage());
         }
+    }
+
+    private boolean isChitChatQuery(String query) {
+        String queryType = determineQueryType(query);
+        return "闲聊".equals(queryType);
+    }
+
+    private List<VectorSearchResult> searchContexts(String query) {
+        List<VectorSearchResult> contexts = ragVectorService.search(query);
+        log.debug("向量检索完成，返回结果数量: {}", contexts.size());
+        return contexts;
+    }
+
+    private void processStreamResponse(Flux<ApiChatChunk> stream, String userDestination, String businessSessionId) {
+        StringBuilder fullResponse = new StringBuilder();
+        stream.subscribe(
+                chunk -> handleStreamChunk(chunk, fullResponse, userDestination),
+                error -> handleStreamError(error, userDestination),
+                () -> handleStreamComplete(fullResponse, userDestination, businessSessionId)
+        );
+    }
+
+    private void handleStreamChunk(ApiChatChunk chunk, StringBuilder fullResponse, String userDestination) {
+        if (chunk.getChoices() == null || chunk.getChoices().isEmpty()) {
+            return;
+        }
+        
+        ApiChatChunk.Choice choice = chunk.getChoices().get(0);
+        if (choice.getDelta() == null || choice.getDelta().getContent() == null) {
+            return;
+        }
+        
+        String content = choice.getDelta().getContent();
+        fullResponse.append(content);
+        
+        StreamResponse response = StreamResponse.builder()
+                .content(content)
+                .finishReason(null)
+                .message(null)
+                .build();
+        RagWebSocketHandler.sendMessageToSession(userDestination, response);
+    }
+
+    private void handleStreamError(Throwable error, String userDestination) {
+        log.error("流式推理发生错误", error);
+        sendErrorResponse(userDestination, "推理过程发生错误: " + error.getMessage());
+    }
+
+    private void handleStreamComplete(StringBuilder fullResponse, String userDestination, String businessSessionId) {
+        String finalResponse = fullResponse.toString();
+        log.info("流式推理完成，总响应长度: {}", finalResponse.length());
+        
+        chatSessionService.addAssistantMessage(businessSessionId, finalResponse);
+        
+        StreamResponse completeResponse = StreamResponse.builder()
+                .content("")
+                .finishReason("stop")
+                .message(null)
+                .build();
+        RagWebSocketHandler.sendMessageToSession(userDestination, completeResponse);
+    }
+
+    private void sendErrorResponse(String userDestination, String message) {
+        StreamResponse errorResponse = StreamResponse.builder()
+                .content("")
+                .finishReason(null)
+                .message(message)
+                .build();
+        RagWebSocketHandler.sendMessageToSession(userDestination, errorResponse);
     }
 
     /**

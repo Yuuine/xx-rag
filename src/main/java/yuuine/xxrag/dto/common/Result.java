@@ -4,12 +4,10 @@ package yuuine.xxrag.dto.common;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.modulith.NamedInterface;
 
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-@NamedInterface("Result")
 //实体类，统一响应结果
 public class Result<T> {
     private Integer code;//响应码

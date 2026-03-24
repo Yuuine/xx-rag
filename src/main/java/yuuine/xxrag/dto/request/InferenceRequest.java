@@ -1,12 +1,10 @@
 package yuuine.xxrag.dto.request;
 
 import lombok.Data;
-import org.springframework.modulith.NamedInterface;
 
 import java.util.List;
 
 @Data
-@NamedInterface("InferenceRequest")
 public class InferenceRequest {
 
     private List<Message> messages;

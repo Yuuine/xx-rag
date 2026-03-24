@@ -1,5 +1,6 @@
 package yuuine.xxrag.inference.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
@@ -12,14 +13,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.netty.http.client.HttpClient;
-import tools.jackson.databind.ObjectMapper;
 import yuuine.xxrag.dto.common.ApiChatChunk;
-import yuuine.xxrag.inference.config.DeepSeekProperties;
-import yuuine.xxrag.inference.dto.request.ChatRequest;
 import yuuine.xxrag.dto.request.InferenceRequest;
-import yuuine.xxrag.inference.dto.response.ChatResponse;
 import yuuine.xxrag.dto.response.InferenceResponse;
 import yuuine.xxrag.inference.api.InferenceService;
+import yuuine.xxrag.inference.config.DeepSeekProperties;
+import yuuine.xxrag.inference.dto.request.ChatRequest;
+import yuuine.xxrag.inference.dto.response.ChatResponse;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -32,11 +32,12 @@ public class InferenceServiceImpl implements InferenceService {
 
     private final DeepSeekProperties properties;
     private final WebClient webClient;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     // 通过构造函数注入配置并构建带超时的 WebClient
-    public InferenceServiceImpl(DeepSeekProperties properties) {
+    public InferenceServiceImpl(DeepSeekProperties properties, ObjectMapper objectMapper) {
         this.properties = properties;
+        this.objectMapper = objectMapper;
 
         HttpClient httpClient = HttpClient.create()
                 .responseTimeout(Duration.ofSeconds(properties.getTimeoutSeconds()))

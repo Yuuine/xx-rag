@@ -3,6 +3,8 @@ server:
   jetty:
     connection-idle-timeout: 300000
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: xx-rag
   datasource:
@@ -20,11 +22,11 @@ spring:
       max-file-size: 100MB
       max-request-size: 100MB
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-    virtual-host: /
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST:/}
     # 连接池优化
     template:
       mandatory: true             # 找不到路由时返回消息
@@ -85,7 +87,7 @@ app:
       max-history-messages: 10      # 每次返回给模型的最大历史消息数
       max-history-echo-messages: 20  # ui 回显最大历史消息数
   admin:
-    cleanup-password: changeme     # 管理员清理所有会话记录的密码
+    cleanup-password: ${ADMIN_CLEANUP_PASSWORD:changeme}     # 管理员清理所有会话记录的密码
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml

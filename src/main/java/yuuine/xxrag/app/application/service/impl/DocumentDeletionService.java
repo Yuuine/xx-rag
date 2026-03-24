@@ -4,9 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import yuuine.xxrag.app.application.service.RagVectorService;
+import yuuine.xxrag.app.application.service.VectorDeleteOutboxService;
 import yuuine.xxrag.app.domain.repository.DocMapper;
-import yuuine.xxrag.exception.BusinessException;
 
 import java.util.List;
 
@@ -20,42 +19,33 @@ import java.util.List;
 public class DocumentDeletionService {
 
     private final DocMapper docMapper;
-    private final RagVectorService ragVectorService;
+    private final VectorDeleteOutboxService outboxService;
 
     /**
-     * 安全删除文档 - 先删除数据库记录，再删除向量数据
-     * 这样即使向量删除失败，也不会丢失文档元数据
+     * 安全删除文档 - 删除数据库记录并写入 outbox 事件
+     * 向量删除由异步消费者执行，保证最终一致性
      */
     @Transactional
     public void deleteDocuments(List<String> fileMd5s) {
         log.info("开始批量删除文档，数量: {}", fileMd5s.size());
 
-        // 首先删除 MySQL 数据库中的文档记录
+        // 1) 删除 MySQL 元数据
         int deletedCount = docMapper.batchDeleteByFileMd5(fileMd5s);
         log.info("MySQL 删除文档 {} 条", deletedCount);
 
-        // 然后删除向量库中的对应数据
-        try {
-            log.debug("准备删除向量库中的文件: {}", fileMd5s);
-            ragVectorService.deleteChunksByFileMd5s(fileMd5s);
-            log.info("向量库 chunks 删除完成，文件数量: {}", fileMd5s.size());
-        } catch (Exception e) {
-            log.error("向量库删除失败，但数据库记录已删除", e);
-            throw new BusinessException("向量库删除失败，但数据库记录已删除，请检查向量库状态", e);
-        }
+        // 2) 记录 outbox 事件并在事务提交后投递消息
+        Long outboxEventId = outboxService.saveDeleteEvent(fileMd5s);
+        outboxService.publishAfterCommit(outboxEventId);
+        log.info("已写入并准备发布 vector 删除 outbox 事件, eventId={}", outboxEventId);
     }
 
     /**
      * 清理孤立的向量数据（当数据库记录已删除但向量数据仍存在的场景）
      */
     public void cleanupOrphanedVectorData(List<String> fileMd5s) {
-        log.info("清理孤立的向量数据，文件数量: {}", fileMd5s.size());
-        
-        try {
-            ragVectorService.deleteChunksByFileMd5s(fileMd5s);
-            log.info("孤立向量数据清理完成");
-        } catch (Exception e) {
-            log.error("清理孤立向量数据失败", e);
-        }
+        log.info("触发孤立向量清理任务，文件数量: {}", fileMd5s.size());
+        Long outboxEventId = outboxService.saveDeleteEvent(fileMd5s);
+        outboxService.publish(outboxEventId);
+        log.info("已发布孤立向量清理 outbox 事件, eventId={}", outboxEventId);
     }
 }
