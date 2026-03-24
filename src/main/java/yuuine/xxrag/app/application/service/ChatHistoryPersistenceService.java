@@ -81,14 +81,14 @@ public class ChatHistoryPersistenceService {
         }
     }
 
-    public void saveHistory(List<InferenceRequest.Message> messages) {
+    public boolean saveHistory(List<InferenceRequest.Message> messages) {
         if (!properties.isPersistenceEnabled()) {
             log.debug("历史持久化已关闭，跳过写入");
-            return;
+            return false;
         }
         if (messages == null || messages.isEmpty()) {
             log.debug("没有消息需要持久化");
-            return;
+            return false;
         }
 
         try {
@@ -108,8 +108,10 @@ public class ChatHistoryPersistenceService {
             Files.writeString(historyFilePath, json);
 
             log.info("历史记录持久化成功，数量: {}，文件: {}", messages.size(), historyFilePath);
+            return true;
         } catch (IOException e) {
             log.error("写入历史记录文件失败: {}", historyFilePath, e);
+            return false;
         }
     }
 }

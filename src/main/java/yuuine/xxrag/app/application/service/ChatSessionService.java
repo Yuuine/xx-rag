@@ -23,6 +23,7 @@ public class ChatSessionService {
     private final ChatHistoryPersistenceService persistenceService;
     private final ChatHistoryProperties chatHistoryProperties;
     private final List<InferenceRequest.Message> messages;
+    private final Object persistLock = new Object();
 
     public ChatSessionService(ChatHistoryProperties chatHistoryProperties, ChatHistoryPersistenceService persistenceService) {
         this.chatHistoryProperties = chatHistoryProperties;
@@ -73,22 +74,41 @@ public class ChatSessionService {
             return;
         }
 
-        log.info("缓存消息达到阈值 {}，开始持久化", flushThreshold());
-        List<InferenceRequest.Message> messagesToPersist = new ArrayList<>(messages);
-        persistenceService.saveHistory(messagesToPersist);
-        messages.clear();
-        log.info("持久化完成，缓存已清空");
+        synchronized (persistLock) {
+            if (messages.isEmpty()) {
+                return;
+            }
+
+            log.info("缓存消息达到阈值 {}，开始持久化", flushThreshold());
+            List<InferenceRequest.Message> messagesToPersist = new ArrayList<>(messages);
+            boolean persisted = persistenceService.saveHistory(messagesToPersist);
+            
+            if (persisted) {
+                messages.clear();
+                log.info("持久化完成，缓存已清空");
+            } else {
+                log.warn("持久化失败，保留内存中的消息，数量: {}", messages.size());
+            }
+        }
     }
 
     @PreDestroy
     public void onDestroy() {
-        if (!messages.isEmpty()) {
-            log.info("应用关闭前，持久化剩余 {} 条消息", messages.size());
-            List<InferenceRequest.Message> messagesToPersist = new ArrayList<>(messages);
-            persistenceService.saveHistory(messagesToPersist);
-            messages.clear();
-        } else {
-            log.info("应用关闭，没有需要持久化的消息");
+        synchronized (persistLock) {
+            if (!messages.isEmpty()) {
+                log.info("应用关闭前，持久化剩余 {} 条消息", messages.size());
+                List<InferenceRequest.Message> messagesToPersist = new ArrayList<>(messages);
+                boolean persisted = persistenceService.saveHistory(messagesToPersist);
+                
+                if (persisted) {
+                    messages.clear();
+                    log.info("应用关闭前持久化完成");
+                } else {
+                    log.warn("应用关闭前持久化失败，但应用仍将关闭，内存消息: {}", messages.size());
+                }
+            } else {
+                log.info("应用关闭，没有需要持久化的消息");
+            }
         }
     }
 }

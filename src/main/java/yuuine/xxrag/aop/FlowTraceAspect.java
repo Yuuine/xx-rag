@@ -67,19 +67,23 @@ public class FlowTraceAspect extends BaseAspect {
         try {
             TraceContext.push(node);
 
-            if (root && aopProperties.getFlowTrace().isLogRootOnly()) {
+            if (!aopProperties.getFlowTrace().isLogRootOnly()) {
                 traceLogger.info("[TRACE] {}", TraceContext.prettyTrace());
             }
 
             return pjp.proceed();
 
         } catch (Throwable throwable) {
-            if (root) {
+            boolean shouldLogError = root || !aopProperties.getFlowTrace().isLogRootOnly();
+            if (shouldLogError) {
                 traceLogger.error("[TRACE-ERROR] {} - Exception: {}", 
                         TraceContext.prettyTrace(), throwable.getMessage());
             }
             throw throwable;
         } finally {
+            if (root && aopProperties.getFlowTrace().isLogRootOnly()) {
+                traceLogger.info("[TRACE] {}", TraceContext.prettyTrace());
+            }
             cleanupTraceContext(root);
         }
     }
