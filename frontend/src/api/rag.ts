@@ -1,4 +1,4 @@
-import client, { request } from './http'
+import { request } from './http'
 import type { DocListData } from './types'
 
 export async function uploadFiles(files: File[]) {
@@ -26,30 +26,6 @@ export async function deleteDocs(fileMd5s: string[]) {
   })
 }
 
-export async function deleteSession(sessionId: string) {
-  return request<unknown>({
-    url: '/xx/deleteSession',
-    method: 'post',
-    data: { sessionId }
-  })
-}
-
-export async function deleteSessionBefore(sessionId: string, beforeDate: string) {
-  return request<unknown>({
-    url: '/xx/deleteSessionBefore',
-    method: 'post',
-    data: { sessionId, beforeDate }
-  })
-}
-
-export async function deleteAllSessions(password: string) {
-  return request<unknown>({
-    url: '/xx/deleteAllSessions',
-    method: 'post',
-    data: { password }
-  })
-}
-
 export async function checkHealth() {
-  await client.get('/actuator/health')
+  await fetch('/actuator/health')
 }

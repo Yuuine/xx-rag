@@ -32,4 +32,9 @@ public class ChatHistoryProperties {
      * 历史回显数量 - 首次连接时向前端回显的历史消息条数（UI 展示）
      */
     private int maxHistoryEchoMessages = 20;
+
+    /**
+     * 历史记录持久化文件路径
+     */
+    private String historyFilePath = "./data/chat_history.json";
 }

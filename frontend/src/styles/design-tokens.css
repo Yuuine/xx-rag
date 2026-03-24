@@ -1,229 +1,138 @@
+/* DeepSeek-inspired Design System */
 :root {
-  /* ==========================================
-     Design Tokens - Color System (Light Mode)
-     ========================================== */
+  /* Colors - Light Mode */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f7f7f8;
+  --color-bg-tertiary: #f0f0f0;
+  --color-bg-hover: #e8e8e8;
   
-  /* Primary Colors */
-  --ds-color-primary: #0071e3;
-  --ds-color-primary-hover: #0077ed;
-  --ds-color-primary-active: #005ecb;
-  --ds-color-primary-light: rgba(0, 113, 227, 0.1);
-  --ds-color-primary-lighter: rgba(0, 113, 227, 0.05);
+  --color-text-primary: #1f1f1f;
+  --color-text-secondary: #6e6e73;
+  --color-text-tertiary: #a1a1a6;
   
-  /* Success Colors */
-  --ds-color-success: #34c759;
-  --ds-color-success-hover: #2db450;
-  --ds-color-success-light: rgba(52, 199, 89, 0.1);
+  --color-accent: #0066ff;
+  --color-accent-hover: #0055cc;
+  --color-accent-pressed: #0044aa;
+  --color-accent-light: #e6f0ff;
   
-  /* Warning Colors */
-  --ds-color-warning: #ff9500;
-  --ds-color-warning-hover: #e68500;
-  --ds-color-warning-light: rgba(255, 149, 0, 0.1);
+  --color-border: #d2d2d7;
+  --color-border-light: #e5e5e7;
   
-  /* Error Colors */
-  --ds-color-error: #ff3b30;
-  --ds-color-error-hover: #e6352b;
-  --ds-color-error-light: rgba(255, 59, 48, 0.1);
+  --color-success: #34c759;
+  --color-warning: #ff9500;
+  --color-error: #ff3b30;
   
-  /* Neutral Colors */
-  --ds-color-neutral-50: #f5f5f7;
-  --ds-color-neutral-100: #e8e8ed;
-  --ds-color-neutral-200: #d2d2d7;
-  --ds-color-neutral-300: #86868b;
-  --ds-color-neutral-400: #6e6e73;
-  --ds-color-neutral-500: #424245;
-  --ds-color-neutral-600: #1d1d1f;
+  --color-code-bg: #f5f5f7;
+  --color-code-border: #e5e5e7;
   
-  /* Text Colors */
-  --ds-color-text-primary: var(--ds-color-neutral-600);
-  --ds-color-text-secondary: var(--ds-color-neutral-300);
-  --ds-color-text-tertiary: var(--ds-color-neutral-400);
-  --ds-color-text-inverse: #ffffff;
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-family-mono: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
   
-  /* Background Colors */
-  --ds-color-bg-primary: #ffffff;
-  --ds-color-bg-secondary: var(--ds-color-neutral-50);
-  --ds-color-bg-tertiary: var(--ds-color-neutral-100);
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 2rem;
   
-  /* Border Colors */
-  --ds-color-border: var(--ds-color-neutral-200);
-  --ds-color-border-light: var(--ds-color-neutral-100);
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  /* Spacing - 4pt grid */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+  
+  /* Border Radius */
+  --radius-xs: 0.375rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.16);
+  
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Z-index scale */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+  --z-tooltip: 500;
+  
+  /* Sidebar */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 64px;
+  
+  /* Chat */
+  --chat-max-width: 900px;
 }
 
+/* Dark Mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    /* ==========================================
-       Design Tokens - Color System (Dark Mode)
-       ========================================== */
+    --color-bg-primary: #0f0f0f;
+    --color-bg-secondary: #1c1c1e;
+    --color-bg-tertiary: #2c2c2e;
+    --color-bg-hover: #3a3a3c;
     
-    /* Primary Colors */
-    --ds-color-primary: #0a84ff;
-    --ds-color-primary-hover: #409cff;
-    --ds-color-primary-active: #0066cc;
-    --ds-color-primary-light: rgba(10, 132, 255, 0.15);
-    --ds-color-primary-lighter: rgba(10, 132, 255, 0.08);
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #98989d;
+    --color-text-tertiary: #6e6e73;
     
-    /* Success Colors */
-    --ds-color-success: #30d158;
-    --ds-color-success-hover: #34c759;
-    --ds-color-success-light: rgba(48, 209, 88, 0.15);
+    --color-accent: #0a84ff;
+    --color-accent-hover: #409cff;
+    --color-accent-pressed: #0051d5;
+    --color-accent-light: #1a2a4a;
     
-    /* Warning Colors */
-    --ds-color-warning: #ffd60a;
-    --ds-color-warning-hover: #ffe066;
-    --ds-color-warning-light: rgba(255, 214, 10, 0.15);
+    --color-border: #38383a;
+    --color-border-light: #2c2c2e;
     
-    /* Error Colors */
-    --ds-color-error: #ff453a;
-    --ds-color-error-hover: #ff6b61;
-    --ds-color-error-light: rgba(255, 69, 58, 0.15);
+    --color-success: #30d158;
+    --color-warning: #ff9f0a;
+    --color-error: #ff453a;
     
-    /* Neutral Colors */
-    --ds-color-neutral-50: #1c1c1e;
-    --ds-color-neutral-100: #2c2c2e;
-    --ds-color-neutral-200: #3a3a3c;
-    --ds-color-neutral-300: #8e8e93;
-    --ds-color-neutral-400: #aeaeb2;
-    --ds-color-neutral-500: #f2f2f7;
-    --ds-color-neutral-600: #ffffff;
+    --color-code-bg: #1c1c1e;
+    --color-code-border: #38383a;
     
-    /* Text Colors */
-    --ds-color-text-primary: var(--ds-color-neutral-600);
-    --ds-color-text-secondary: var(--ds-color-neutral-400);
-    --ds-color-text-tertiary: var(--ds-color-neutral-300);
-    --ds-color-text-inverse: #1d1d1f;
-    
-    /* Background Colors */
-    --ds-color-bg-primary: #000000;
-    --ds-color-bg-secondary: var(--ds-color-neutral-50);
-    --ds-color-bg-tertiary: var(--ds-color-neutral-100);
-    
-    /* Border Colors */
-    --ds-color-border: var(--ds-color-neutral-200);
-    --ds-color-border-light: var(--ds-color-neutral-100);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.6);
+    --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.7);
   }
 }
 
-:root {
-  /* ==========================================
-     Design Tokens - Spacing System
-     ========================================== */
-  
-  --ds-space-xs: 4px;
-  --ds-space-sm: 8px;
-  --ds-space-md: 12px;
-  --ds-space-lg: 16px;
-  --ds-space-xl: 24px;
-  --ds-space-2xl: 32px;
-  --ds-space-3xl: 48px;
-  
-  /* ==========================================
-     Design Tokens - Typography System
-     ========================================== */
-  
-  --ds-font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  --ds-font-family-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
-  
-  --ds-font-size-xs: 12px;
-  --ds-font-size-sm: 14px;
-  --ds-font-size-md: 16px;
-  --ds-font-size-lg: 18px;
-  --ds-font-size-xl: 20px;
-  --ds-font-size-2xl: 24px;
-  --ds-font-size-3xl: 32px;
-  
-  --ds-font-weight-regular: 400;
-  --ds-font-weight-medium: 500;
-  --ds-font-weight-semibold: 600;
-  --ds-font-weight-bold: 700;
-  
-  --ds-line-height-tight: 1.2;
-  --ds-line-height-normal: 1.5;
-  --ds-line-height-relaxed: 1.6;
-  
-  /* ==========================================
-     Design Tokens - Border Radius
-     ========================================== */
-  
-  --ds-radius-sm: 8px;
-  --ds-radius-md: 12px;
-  --ds-radius-lg: 18px;
-  --ds-radius-xl: 28px;
-  --ds-radius-full: 9999px;
-  
-  /* ==========================================
-     Design Tokens - Shadows
-     ========================================== */
-  
-  --ds-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --ds-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
-  --ds-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
-  --ds-shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.15);
-  
-  /* ==========================================
-     Design Tokens - Dark Mode Shadows
-     ========================================== */
-  
-  @media (prefers-color-scheme: dark) {
-    --ds-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --ds-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-    --ds-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
-    --ds-shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.6);
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-base: 0ms;
+    --transition-slow: 0ms;
   }
-  
-  /* ==========================================
-     Design Tokens - Transitions
-     ========================================== */
-  
-  --ds-transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  --ds-transition-normal: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --ds-transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  /* ==========================================
-     Design Tokens - Z-Index
-     ========================================== */
-  
-  --ds-z-dropdown: 100;
-  --ds-z-sticky: 200;
-  --ds-z-fixed: 300;
-  --ds-z-modal-backdrop: 400;
-  --ds-z-modal: 500;
-  --ds-z-popover: 600;
-  --ds-z-tooltip: 700;
-  --ds-z-toast: 800;
-  
-  /* ==========================================
-     Compatibility Aliases
-     ========================================== */
-  
-  /* Apple style aliases for backward compatibility */
-  --apple-blue: var(--ds-color-primary);
-  --apple-blue-hover: var(--ds-color-primary-hover);
-  --apple-blue-light: var(--ds-color-primary-light);
-  --apple-success: var(--ds-color-success);
-  --apple-danger: var(--ds-color-error);
-  --apple-warning: var(--ds-color-warning);
-  --apple-gray: var(--ds-color-neutral-300);
-  --apple-gray-light: var(--ds-color-neutral-50);
-  --apple-dark: var(--ds-color-neutral-600);
-  --apple-text: var(--ds-color-text-primary);
-  --apple-text-secondary: var(--ds-color-text-secondary);
-  --apple-bg: var(--ds-color-bg-primary);
-  --apple-bg-secondary: var(--ds-color-bg-secondary);
-  --apple-border: var(--ds-color-border);
-  --apple-border-light: var(--ds-color-border-light);
-  
-  --focus-ring: rgba(0, 113, 227, 0.3);
-  --shadow-sm: var(--ds-shadow-sm);
-  --shadow-md: var(--ds-shadow-md);
-  --shadow-lg: var(--ds-shadow-lg);
-  --shadow-xl: var(--ds-shadow-xl);
-  --transition-fast: var(--ds-transition-fast);
-  --transition-normal: var(--ds-transition-normal);
-  --transition-slow: var(--ds-transition-slow);
-  --radius-sm: var(--ds-radius-sm);
-  --radius-md: var(--ds-radius-md);
-  --radius-lg: var(--ds-radius-lg);
-  --radius-xl: var(--ds-radius-xl);
-  --radius-full: var(--ds-radius-full);
 }

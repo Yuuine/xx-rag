@@ -1,5 +1,6 @@
 package yuuine.xxrag.app.application.service.impl;
 
+import jakarta.websocket.Session;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -12,15 +13,11 @@ import yuuine.xxrag.dto.request.InferenceRequest;
 import yuuine.xxrag.dto.response.InferenceResponse;
 import yuuine.xxrag.dto.response.StreamResponse;
 import yuuine.xxrag.inference.api.InferenceService;
-import yuuine.xxrag.websocket.RagWebSocketHandler;
+import yuuine.xxrag.websocket.RagWebSocketSessionManager;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 搜索推理服务组件
- * 负责RAG流式搜索及WebSocket响应处理
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -30,38 +27,27 @@ public class SearchInferenceService {
     private final InferenceService inferenceService;
     private final PromptConstructionService promptConstructionService;
     private final ChatSessionService chatSessionService;
+    private final RagWebSocketSessionManager wsSessionManager;
 
-    /**
-     * 执行流式搜索
-     */
-    public void streamSearch(String query, String userDestination) {
-        executeRagSearchStream(query, userDestination);
+    public void streamSearch(String query, Session session) {
+        executeRagSearchStream(query, session);
     }
 
-    /**
-     * 流式 RAG 搜索流程
-     */
-    private void executeRagSearchStream(String query, String userDestination) {
+    private void executeRagSearchStream(String query, Session session) {
         try {
             log.info("开始流式搜索，查询: {}", query);
-
-            String businessSessionId = RagWebSocketHandler.getBusinessSessionId(userDestination);
-            if (businessSessionId == null) {
-                log.error("无法获取业务会话ID，WebSocket ID: {}", userDestination);
-                return;
-            }
 
             boolean isChitChat = isChitChatQuery(query);
             List<VectorSearchResult> contexts = isChitChat ? null : searchContexts(query);
 
-            InferenceRequest inferenceRequest = buildInferenceRequestWithHistory(query, contexts, businessSessionId);
+            InferenceRequest inferenceRequest = buildInferenceRequestWithHistory(query, contexts);
             Flux<ApiChatChunk> stream = inferenceService.streamInfer(inferenceRequest);
 
-            processStreamResponse(stream, userDestination, businessSessionId);
+            processStreamResponse(stream, session);
 
         } catch (Exception e) {
             log.error("流式搜索初始化失败", e);
-            sendErrorResponse(userDestination, "初始化失败: " + e.getMessage());
+            sendErrorResponse(session, "初始化失败: " + e.getMessage());
         }
     }
 
@@ -76,79 +62,72 @@ public class SearchInferenceService {
         return contexts;
     }
 
-    private void processStreamResponse(Flux<ApiChatChunk> stream, String userDestination, String businessSessionId) {
+    private void processStreamResponse(Flux<ApiChatChunk> stream, Session session) {
         StringBuilder fullResponse = new StringBuilder();
         stream.subscribe(
-                chunk -> handleStreamChunk(chunk, fullResponse, userDestination),
-                error -> handleStreamError(error, userDestination),
-                () -> handleStreamComplete(fullResponse, userDestination, businessSessionId)
+                chunk -> handleStreamChunk(chunk, fullResponse, session),
+                error -> handleStreamError(error, session),
+                () -> handleStreamComplete(fullResponse, session)
         );
     }
 
-    private void handleStreamChunk(ApiChatChunk chunk, StringBuilder fullResponse, String userDestination) {
+    private void handleStreamChunk(ApiChatChunk chunk, StringBuilder fullResponse, Session session) {
         if (chunk.getChoices() == null || chunk.getChoices().isEmpty()) {
             return;
         }
-        
+
         ApiChatChunk.Choice choice = chunk.getChoices().get(0);
         if (choice.getDelta() == null || choice.getDelta().getContent() == null) {
             return;
         }
-        
+
         String content = choice.getDelta().getContent();
         fullResponse.append(content);
-        
+
         StreamResponse response = StreamResponse.builder()
                 .content(content)
                 .finishReason(null)
                 .message(null)
                 .build();
-        RagWebSocketHandler.sendMessageToSession(userDestination, response);
+        wsSessionManager.sendToSession(session, response);
     }
 
-    private void handleStreamError(Throwable error, String userDestination) {
+    private void handleStreamError(Throwable error, Session session) {
         log.error("流式推理发生错误", error);
-        sendErrorResponse(userDestination, "推理过程发生错误: " + error.getMessage());
+        sendErrorResponse(session, "推理过程发生错误: " + error.getMessage());
     }
 
-    private void handleStreamComplete(StringBuilder fullResponse, String userDestination, String businessSessionId) {
+    private void handleStreamComplete(StringBuilder fullResponse, Session session) {
         String finalResponse = fullResponse.toString();
         log.info("流式推理完成，总响应长度: {}", finalResponse.length());
-        
-        chatSessionService.addAssistantMessage(businessSessionId, finalResponse);
-        
+
+        chatSessionService.addAssistantMessage(finalResponse);
+
         StreamResponse completeResponse = StreamResponse.builder()
                 .content("")
                 .finishReason("stop")
                 .message(null)
                 .build();
-        RagWebSocketHandler.sendMessageToSession(userDestination, completeResponse);
+        wsSessionManager.sendToSession(session, completeResponse);
     }
 
-    private void sendErrorResponse(String userDestination, String message) {
+    private void sendErrorResponse(Session session, String message) {
         StreamResponse errorResponse = StreamResponse.builder()
                 .content("")
                 .finishReason(null)
                 .message(message)
                 .build();
-        RagWebSocketHandler.sendMessageToSession(userDestination, errorResponse);
+        wsSessionManager.sendToSession(session, errorResponse);
     }
 
-    /**
-     * 构造包含历史消息的推理请求
-     */
-    private InferenceRequest buildInferenceRequestWithHistory(String query, List<VectorSearchResult> contexts, String sessionId) {
-        // 获取历史消息
-        List<InferenceRequest.Message> historyMessages = chatSessionService.getSessionHistory(sessionId);
+    private InferenceRequest buildInferenceRequestWithHistory(String query, List<VectorSearchResult> contexts) {
+        List<InferenceRequest.Message> historyMessages = chatSessionService.getMessages();
 
-        // 构建当前查询的请求
         InferenceRequest currentRequest = promptConstructionService.buildInferenceRequest(query, contexts);
 
-        // 合并历史消息和当前消息
         List<InferenceRequest.Message> allMessages = new ArrayList<>(historyMessages);
         allMessages.addAll(currentRequest.getMessages());
 
-        // 创建新的请求对象
         InferenceRequest requestWithHistory = new InferenceRequest();
         requestWithHistory.setMessages(allMessages);
 
@@ -157,7 +136,6 @@ public class SearchInferenceService {
         return requestWithHistory;
     }
 
-    // 意图判断逻辑
     private String determineQueryType(String query) {
         String intentPrompt = promptConstructionService.buildIntentDetectionPrompt();
 

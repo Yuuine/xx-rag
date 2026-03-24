@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 @Component
@@ -14,27 +13,16 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class RagWebSocketSessionManager {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private final CopyOnWriteArraySet<Session> sessions = new CopyOnWriteArraySet<>();
 
-    private final CopyOnWriteArraySet<RagWebSocketHandler> webSocketSet = new CopyOnWriteArraySet<>();
-    private final ConcurrentHashMap<String, RagWebSocketHandler> sessionMap = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, String> webSocketToBusinessSessionMap = new ConcurrentHashMap<>();
-
-    public void register(Session session, RagWebSocketHandler handler, String businessSessionId) {
-        webSocketSet.add(handler);
-        sessionMap.put(session.getId(), handler);
-        webSocketToBusinessSessionMap.put(session.getId(), businessSessionId);
+    public void register(Session session) {
+        sessions.add(session);
+        log.info("WebSocket 连接已注册，当前连接数: {}", sessions.size());
     }
 
-    public String unregister(Session session, RagWebSocketHandler handler) {
-        String webSocketId = session.getId();
-        String businessSessionId = webSocketToBusinessSessionMap.remove(webSocketId);
-        webSocketSet.remove(handler);
-        sessionMap.remove(webSocketId);
-        return businessSessionId;
-    }
-
-    public String getBusinessSessionId(String webSocketSessionId) {
-        return webSocketToBusinessSessionMap.get(webSocketSessionId);
+    public void unregister(Session session) {
+        sessions.remove(session);
+        log.info("WebSocket 连接已注销，当前连接数: {}", sessions.size());
     }
 
     public void sendToSession(Session session, Object message) {
@@ -54,18 +42,13 @@ public class RagWebSocketSessionManager {
     }
 
     public void sendMessageToSession(String sessionId, Object message) {
-        RagWebSocketHandler handler = sessionMap.get(sessionId);
-        if (handler != null && handler.getSession() != null) {
-            sendToSession(handler.getSession(), message);
-        } else {
-            log.warn("找不到会话ID为 {} 的WebSocket处理器", sessionId);
-        }
+        log.warn("sendMessageToSession 不再支持，请使用 sendToSession 或 broadcast");
     }
 
     public void broadcast(Object message) {
-        for (RagWebSocketHandler item : webSocketSet) {
+        for (Session session : sessions) {
             try {
-                sendToSession(item.getSession(), message);
+                sendToSession(session, message);
             } catch (Exception e) {
                 log.error("广播消息失败", e);
             }
@@ -73,7 +56,6 @@ public class RagWebSocketSessionManager {
     }
 
     public int connectionCount() {
-        return webSocketSet.size();
+        return sessions.size();
     }
 }
-

@@ -11,23 +11,20 @@
       - [GET `/xx/getDoc`](#get-xxgetdoc)
     - [删除文档](#删除文档)
       - [POST `/xx/delete`](#post-xxdelete)
-    - [删除会话](#删除会话)
-      - [POST `/xx/deleteSession`](#post-xxdeletesession)
-    - [删除会话（按时间）](#删除会话按时间)
-      - [POST `/xx/deleteSessionBefore`](#post-xxdeletesessionbefore)
-    - [删除所有会话（管理员）](#删除所有会话管理员)
-      - [POST `/xx/deleteAllSessions`](#post-xxdeleteallsessions)
   - [WebSocket 服务](#websocket-服务)
     - [WebSocket 连接](#websocket-连接)
       - [端点](#端点)
         - [连接方式](#连接方式)
-        - [服务器在 `onOpen` 时会：](#服务器在-onopen-时会)
-        - [历史消息格式（服务器主动推送）](#历史消息格式服务器主动推送)
         - [客户端发送消息](#客户端发送消息)
         - [服务器发送（流式）消息格式](#服务器发送流式消息格式)
         - [心跳](#心跳)
   - [通用响应格式（服务端统一包装）](#通用响应格式服务端统一包装)
   - [静态资源](#静态资源)
+  - [Rerank Service (重排序服务)](#rerank-service-重排序服务)
+    - [健康检查](#健康检查)
+      - [GET `/health`](#get-health)
+    - [文档重排序](#文档重排序)
+      - [POST `/rerank`](#post-rerank)
 
 
 ## RAG 控制器
@@ -95,104 +92,18 @@ GET /xx/getDoc
 
 请求示例：
 
+```json
 [
   "md5checksum1",
   "md5checksum2"
 ]
+```
 
 响应
 
 | 状态码 | 类型             | 描述   |
 |-----|----------------|------|
 | 200 | Result<Object> | 删除结果 |
-
----
-
-### 删除会话
-
-#### POST `/xx/deleteSession`
-
-删除单个会话（通过业务会话 ID）。
-
-请求参数（application/json）：
-
-| 参数名       |     类型 | 必填 | 描述          |
-|-----------|-------:|---:|-------------|
-| sessionId | String |  是 | 要删除的业务会话 ID |
-
-请求示例：
-
-{
-  "sessionId": "<businessSessionId>"
-}
-
-响应
-
-| 状态码 | 类型             | 描述   |
-|-----|----------------|------|
-| 200 | Result<Object> | 操作结果 |
-
----
-
-### 删除会话（按时间）
-
-#### POST `/xx/deleteSessionBefore`
-
-删除某一会话在指定时间点之前的历史记录。`beforeDate` 必须是 ISO_LOCAL_DATE_TIME 格式（例如：`2023-09-01T12:00:00`）。
-
-请求参数（application/json）：
-
-| 参数名        |     类型 | 必填 | 描述                                   |
-|------------|-------:|---:|--------------------------------------|
-| sessionId  | String |  是 | 目标业务会话 ID                            |
-| beforeDate | String |  否 | ISO_LOCAL_DATE_TIME 格式的时间字符串，若为空则不删除 |
-
-注意：如果无法解析 `beforeDate`，服务会返回错误：`无法解析 beforeDate，使用 ISO_LOCAL_DATE_TIME 格式`。
-
-请求示例：
-
-{
-  "sessionId": "abcd1234...",
-  "beforeDate": "2026-01-01T00:00:00"
-}
-
-响应
-
-| 状态码 | 类型             | 描述        |
-|-----|----------------|-----------|
-| 200 | Result<Object> | 操作结果或错误信息 |
-
----
-
-### 删除所有会话（管理员）
-
-#### POST `/xx/deleteAllSessions`
-
-危险操作：删除所有会话。只有在配置 `AdminProperties.cleanupPassword`（配置项名 `cleanup-password`）存在并且请求中提供正确密码时才会执行。
-
-请求参数（application/json）：
-
-| 参数名      |     类型 | 必填 | 描述               |
-|----------|-------:|---:|------------------|
-| password | String |  是 | 管理员清理密码（与服务配置比较） |
-
-行为与错误情况：
-- 若服务未配置清理密码，返回 `服务器未启用此操作`。
-- 若提供的密码不正确，返回 `密码错误，拒绝执行`。
-- 通过密码验证后会执行删除并返回成功信息。
-
-请求示例：
-
-{
-  "password": "<admin-password>"
-}
-
-响应
-
-| 状态码 | 类型             | 描述   |
-|-----|----------------|------|
-| 200 | Result<Object> | 操作结果 |
-
 
 ---
 
@@ -211,37 +122,13 @@ GET /xx/getDoc
 
 示例（浏览器）：
 
-const ws = new WebSocket("ws://<host>:<port>/ws-chat?sid=<optional-uuid-or-32hex>");
-
-可选查询参数 `sid`：
-- 支持带短横线的 UUID（8-4-4-4-12）或不带短横线的 32 个十六进制字符；
-- 服务端会尝试规范化并验证该 UUID；若合法则使用（并存储无短横线形式），否则生成新的会话 ID；
-- 在浏览器中通常通过 localStorage 保存 sid，使同一浏览器多个标签页共享业务会话。
-
-##### 服务器在 `onOpen` 时会：
-- 为连接生成或获取业务会话 ID；
-- 从 `ChatSessionService` 获取最近若干条历史（默认上限从 service 获取或 20）并主动推送给客户端；
-
-##### 历史消息格式（服务器主动推送）
-
-类型：JSON 对象，示例：
-
-{
-  "type": "history",
-  "messages": [
-    { "role": "user", "content": "用户之前的问题" },
-    { "role": "assistant", "content": "之前的回答片段" }
-  ]
-}
-
-字段说明：
-- `type`: 字符串，值为 `history` 表示这是历史消息批量回显；
-- `messages`: 数组，元素为 `{role, content}`，role 与 `InferenceRequest.Message` 对应。
+```javascript
+const ws = new WebSocket("ws://<host>:<port>/ws-chat");
+```
 
 ##### 客户端发送消息
 
-- 当前实现：客户端直接发送纯文本消息（作为用户输入）。
-- 服务器在 `onMessage` 时会将文本加入会话历史并调用 `appApi.streamSearch(message, session.getId())` 来执行流式检索。
+客户端直接发送纯文本消息（作为用户输入）。
 
 ##### 服务器发送（流式）消息格式
 
@@ -249,27 +136,33 @@ const ws = new WebSocket("ws://<host>:<port>/ws-chat?sid=<optional-uuid-or-32hex
 
 每次推送的普通片段：
 
+```json
 {
   "content": "这是部分回复文本",
   "finishReason": null,
   "message": null
 }
+```
 
 最后一条（结束）片段：
 
+```json
 {
   "content": "",
   "finishReason": "stop",
   "message": null
 }
+```
 
 错误情况示例：
 
+```json
 {
   "content": "",
   "finishReason": null,
   "message": "错误：描述信息"
 }
+```
 
 字段说明：
 - `content`: String，每次流式推送的文本片段；结束时可为空字符串；
@@ -280,7 +173,9 @@ const ws = new WebSocket("ws://<host>:<port>/ws-chat?sid=<optional-uuid-or-32hex
 
 有一个定时任务会每 60 秒广播一个心跳字符串：
 
+```json
 {"type":"heartbeat"}
+```
 
 客户端可根据该心跳实现连接状态检测。
 
@@ -305,11 +200,13 @@ const ws = new WebSocket("ws://<host>:<port>/ws-chat?sid=<optional-uuid-or-32hex
 
 示例（发生错误）：
 
+```json
 {
   "code": 1,
   "message": "错误描述",
   "data": null
 }
+```
 
 
 ## 静态资源
@@ -317,5 +214,136 @@ const ws = new WebSocket("ws://<host>:<port>/ws-chat?sid=<optional-uuid-or-32hex
 - 首页: `/index.html`（位于 resources/static/index.html）
 - 文档页: `/docs.html`（位于 resources/static/docs.html）
 
+---
+
+## Rerank Service (重排序服务)
+
+独立 Python 服务，基于 FastAPI 实现，提供文档重排序功能。
+
+### 基本信息
+
+- 基础路径: `/`
+- 启动命令: `python main.py` 或 `start.bat`（Windows）
+- 默认端口: `8082`
+- 模型: BCE Reranker Base v1
+
+配置文件位于 `rerank-service/config.py`：
+- `HOST`: 服务地址（默认 `0.0.0.0`）
+- `PORT`: 服务端口（默认 `8082`）
+- `DEFAULT_TOP_K`: 默认返回数量（默认 `5`）
+- `MAX_SEQ_LENGTH`: 最大序列长度（默认 `512`）
+
+---
+
+### 健康检查
+
+#### GET `/health`
+
+检查服务健康状态。
+
+响应示例：
+
+```json
+{
+  "status": "healthy",
+  "model_path": "rerank-service/models/bce-reranker-base_v1"
+}
+```
+
+---
+
+### 文档重排序
+
+#### POST `/rerank`
+
+对文档列表进行重排序，基于查询相关性。
+
+请求参数（application/json）：
+
+| 参数名       |           类型 | 必填 | 描述                    |
+|------------|-------------:|---:|-----------------------|
+| query      | String       |  是 | 查询字符串                |
+| documents  | List<String> |  是 | 待排序的文档列表            |
+| top_k      | Integer      |  否 | 返回的相关文档数量（默认 5）    |
+
+请求示例：
+
+```json
+{
+  "query": "什么是人工智能",
+  "documents": [
+    "人工智能是计算机科学的一个分支。",
+    "机器学习是人工智能的子领域。",
+    "今天天气很好。"
+  ],
+  "top_k": 2
+}
+```
+
+响应
+
+```json
+{
+  "results": [
+    {
+      "index": 0,
+      "document": "人工智能是计算机科学的一个分支。",
+      "score": 0.9523
+    },
+    {
+      "index": 1,
+      "document": "机器学习是人工智能的子领域。",
+      "score": 0.8901
+    }
+  ]
+}
+```
+
+响应字段说明：
+
+| 字段       |     类型 | 描述           |
+|-----------|-------:|--------------|
+| results   | Array  | 重排序后的结果列表  |
+| index     | Integer | 原始文档索引     |
+| document  | String | 文档内容        |
+| score     | Float  | 相关性分数（越高越相关） |
+
+---
+
+## 对话历史管理
+
+### 概述
+
+系统采用全局对话历史管理机制，所有用户共享同一对话历史上下文。
+
+### 存储机制
+
+| 阶段 | 行为 |
+|-----|------|
+| 应用启动 | 从 `./data/chat_history.json` 加载历史消息到内存 |
+| 收到新消息 | 添加到内存缓存，检查是否达到 20 条 |
+| 达到 20 条 | 自动持久化到文件，清空内存缓存 |
+| 应用关闭 | 持久化所有未保存的消息 |
+
+### 持久化文件
+
+- 位置: `./data/chat_history.json`
+- 格式:
+```json
+{
+  "lastUpdated": "2026-03-24T10:30:00",
+  "messages": [
+    {"role": "user", "content": "消息内容1"},
+    {"role": "assistant", "content": "消息内容2"}
+  ]
+}
+```
+
+### 配置项
+
+| 配置项 | 默认值 | 说明 |
+|-------|-------|------|
+| `app.chat.history.flush-threshold` | 20 | 持久化阈值（消息条数） |
+| `app.chat.history.history-file-path` | `./data/chat_history.json` | 持久化文件路径 |
 
 ---

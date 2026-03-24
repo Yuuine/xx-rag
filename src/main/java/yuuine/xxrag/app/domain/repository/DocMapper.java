@@ -26,4 +26,8 @@ public interface DocMapper {
     @Select("SELECT COUNT(*) FROM rag_documents WHERE file_md5 = #{fileMd5}")
     int countByFileMd5(String fileMd5);
 
+    @Select("SELECT id, file_md5, file_name, created_at " +
+            "FROM rag_documents WHERE file_md5 = #{fileMd5}")
+    RagDocuments getDocByMd5(String fileMd5);
+
 }

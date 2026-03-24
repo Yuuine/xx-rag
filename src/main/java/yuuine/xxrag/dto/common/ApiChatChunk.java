@@ -1,5 +1,6 @@
 package yuuine.xxrag.dto.common;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,6 +11,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ApiChatChunk {
 
     private String id;
@@ -25,7 +27,12 @@ public class ApiChatChunk {
 
     private List<Choice> choices;
 
+    private Usage usage;
+
     @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Choice {
 
         private Integer index;
@@ -35,13 +42,34 @@ public class ApiChatChunk {
         private Object logprobs;
 
         @JsonProperty("finish_reason")
-        private String finishReason; // 最后一个片段会置为 "stop"
+        private String finishReason;
     }
 
     @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class Delta {
 
         private String content;
+
+        private String role;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class Usage {
+
+        @JsonProperty("prompt_tokens")
+        private Integer promptTokens;
+
+        @JsonProperty("completion_tokens")
+        private Integer completionTokens;
+
+        @JsonProperty("total_tokens")
+        private Integer totalTokens;
     }
 
 }
