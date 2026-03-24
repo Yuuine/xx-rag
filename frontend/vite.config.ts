@@ -21,6 +21,22 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true
         }
       }
+    },
+    build: {
+      // 添加内容哈希到文件名，确保文件更改后客户端获取最新版本
+      rollupOptions: {
+        output: {
+          entryFileNames: 'js/[name]-[hash].js',
+          chunkFileNames: 'js/[name]-[hash].js',
+          assetFileNames: (assetInfo) => {
+            const name = assetInfo.name ?? ''
+            if (/\.(css)$/i.test(name)) {
+              return 'css/[name]-[hash][extname]'
+            }
+            return 'assets/[name]-[hash][extname]'
+          }
+        }
+      }
     }
   }
 })

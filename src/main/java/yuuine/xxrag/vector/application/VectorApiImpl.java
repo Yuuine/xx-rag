@@ -56,7 +56,7 @@ public class VectorApiImpl implements VectorApi {
     }
 
     @Override
-    public void deleteVectors(List<String> fileMd5s) {
+    public void deleteChunksByFileMd5s(List<String> fileMd5s) {
         if (fileMd5s == null || fileMd5s.isEmpty()) {
             log.warn("收到空的 fileMd5 列表，跳过删除");
             return;

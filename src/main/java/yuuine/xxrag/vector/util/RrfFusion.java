@@ -2,7 +2,10 @@ package yuuine.xxrag.vector.util;
 
 import org.springframework.data.elasticsearch.core.SearchHit;
 
-import java.util.*;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public final class RrfFusion {

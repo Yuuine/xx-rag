@@ -13,6 +13,7 @@ import yuuine.xxrag.exception.BusinessException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
@@ -24,7 +25,6 @@ public class DocServiceImpl implements DocService {
 
     @Override
     public void saveDoc(String fileMd5, String fileName) {
-        // 检查是否已存在相同MD5的文档
         int count = docMapper.countByFileMd5(fileMd5);
         if (count > 0) {
             throw new BusinessException("文件【" + fileName + "】已存在");
@@ -54,6 +54,12 @@ public class DocServiceImpl implements DocService {
     @Transactional
     public void deleteDocuments(List<String> fileMd5s) {
         documentDeletionService.deleteDocuments(fileMd5s);
+    }
+
+    @Override
+    public Optional<RagDocuments> getDocByMd5(String fileMd5) {
+        RagDocuments doc = docMapper.getDocByMd5(fileMd5);
+        return Optional.ofNullable(doc);
     }
 
 }

@@ -6,11 +6,14 @@ import org.springframework.stereotype.Service;
 import yuuine.xxrag.app.application.service.RagVectorService;
 import yuuine.xxrag.dto.request.VectorAddRequest;
 import yuuine.xxrag.dto.common.VectorAddResult;
-import yuuine.xxrag.exception.BusinessException;
 import yuuine.xxrag.dto.common.VectorSearchResult;
+import yuuine.xxrag.exception.BusinessException;
+import yuuine.xxrag.rerank.service.RerankService;
 import yuuine.xxrag.vector.api.VectorApi;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -18,6 +21,7 @@ import java.util.List;
 public class RagVectorServiceImpl implements RagVectorService {
 
     private final VectorApi vectorApi;
+    private final RerankService rerankService;
 
     @Override
     public VectorAddResult add(List<VectorAddRequest> chunks) {
@@ -43,7 +47,6 @@ public class RagVectorServiceImpl implements RagVectorService {
         log.info("开始向量搜索，查询: {}", query);
 
         try {
-
             List<VectorSearchResult> vectorSearchResults = vectorApi.search(query);
             if (vectorSearchResults == null) {
                 log.error("Vector服务搜索返回空结果");
@@ -51,6 +54,26 @@ public class RagVectorServiceImpl implements RagVectorService {
             }
 
             log.debug("向量搜索完成，找到 {} 个结果", vectorSearchResults.size());
+
+            if (rerankService.isEnabled() && !vectorSearchResults.isEmpty()) {
+                List<String> documents = vectorSearchResults.stream()
+                        .map(VectorSearchResult::getContent)
+                        .collect(Collectors.toList());
+
+                log.info("开始 Rerank 重排序，文档数量: {}", documents.size());
+                List<Integer> rerankedIndices = rerankService.rerank(query, documents);
+
+                List<VectorSearchResult> rerankedResults = new ArrayList<>();
+                for (Integer index : rerankedIndices) {
+                    if (index >= 0 && index < vectorSearchResults.size()) {
+                        rerankedResults.add(vectorSearchResults.get(index));
+                    }
+                }
+
+                log.info("Rerank 完成，返回 {} 个结果", rerankedResults.size());
+                return rerankedResults;
+            }
+
             return vectorSearchResults;
         } catch (Exception e) {
             log.error("向量搜索失败，查询: {}", query, e);
@@ -60,8 +83,6 @@ public class RagVectorServiceImpl implements RagVectorService {
 
     @Override
     public void deleteChunksByFileMd5s(List<String> fileMd5s) {
-
-        vectorApi.deleteVectors(fileMd5s);
-
+        vectorApi.deleteChunksByFileMd5s(fileMd5s);
     }
 }

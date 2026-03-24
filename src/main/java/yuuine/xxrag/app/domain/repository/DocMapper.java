@@ -1,6 +1,9 @@
 package yuuine.xxrag.app.domain.repository;
 
-import org.apache.ibatis.annotations.*;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import yuuine.xxrag.app.domain.model.RagDocuments;
 
 import java.time.LocalDateTime;
@@ -25,5 +28,9 @@ public interface DocMapper {
 
     @Select("SELECT COUNT(*) FROM rag_documents WHERE file_md5 = #{fileMd5}")
     int countByFileMd5(String fileMd5);
+
+    @Select("SELECT id, file_md5, file_name, created_at " +
+            "FROM rag_documents WHERE file_md5 = #{fileMd5}")
+    RagDocuments getDocByMd5(String fileMd5);
 
 }
