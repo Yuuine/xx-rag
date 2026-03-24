@@ -1,0 +1,112 @@
+server:
+  port: 8081
+  jetty:
+    connection-idle-timeout: 300000
+spring:
+  config:
+    import: optional:file:.env[.properties]
+  application:
+    name: xx-rag
+  datasource:
+    url: jdbc:mysql://localhost:3306/rag?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: ${MYSQL_ROOT_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  elasticsearch:
+    uris: localhost:9200
+    username: elastic
+    password: ${ES_PASSWORD}
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST:/}
+    # 连接池优化
+    template:
+      mandatory: true             # 找不到路由时返回消息
+    listener:
+      simple:
+        prefetch: 1             # 每次预取1条，适合慢消费者
+        retry:
+          enabled: true
+          max-retries: 3
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
+deepseek:
+  api-key: ${DEEPSEEK_API_KEY:}
+  base-url: https://api.deepseek.com/v1
+  model: deepseek-chat
+  temperature: 1.3
+  max-tokens: 2048
+  timeout-seconds: 120
+
+rag:
+  prompt:
+    knowledge-system-prompt:
+      你是潇潇知识问答助手，需遵守：
+      1. 仅用简体中文作答。
+      2. 回答需先给结论，再给论据。
+      3. 若无足够信息，请回答"暂无相关信息"并说明原因。
+      4. 回复自然、流畅，不要提及"文档"或"检索"等技术术语。
+    ordinary-system-prompt:
+      作为潇潇知识助手，你的作用是结合知识库回答用户的问题。
+      但是现在用户只是想和你普通的聊天。
+
+embedding:
+  api:
+    model: text-embedding-v4
+    dimension: 1024
+    api-key: ${EMBEDDING_API_KEY:}
+
+app:
+  storage:
+    upload-dir: ${UPLOAD_DIR:./uploads}  # 文件存储目录
+  rag:
+    retrieval:
+      hybrid-enabled: true        # 是否启用混合检索
+      recall-top-k: 20             # 检索时返回的 Top-K 结果数量（给 Rerank 用）
+      candidate-multiplier: 10    # kNN 候选集倍数
+      rrf:
+        k: 60                     # 平滑常数
+        text-weight: 1.0          # 文本检索（BM25）结果的权重
+        vector-weight: 1.0        # 向量检索（kNN）权重
+        final-top-k: 20           # RRF 融合后返回数量（给 Rerank 用）
+      rerank:
+        enabled: true             # 启用 Rerank（使用 Python 微服务）
+        service-url: http://localhost:8082  # Python Rerank 微服务地址
+        top-k: 5                  # Rerank 后最终返回数量
+  text-chunker:
+    chunk-size: 512               # 文本分块大小
+    overlap: 100                  # 文本分块重叠大小
+  chat:
+    history:
+      flush-threshold: 10           # 历史记录缓存阈值（条数）
+      session-expiry-minutes: 30    # 会话过期时间（分钟）
+      persistence-enabled: true     # 是否启用会话持久化
+      max-history-messages: 10      # 每次返回给模型的最大历史消息数
+      max-history-echo-messages: 20  # ui 回显最大历史消息数
+  admin:
+    cleanup-password: ${ADMIN_CLEANUP_PASSWORD:changeme}     # 管理员清理所有会话记录的密码
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+
+logging:
+  level:
+    yuuine.xxrag: debug
+    TRACING_LOGGER: info        # 方法调用跟踪日志级别
+  config: classpath:logback-spring.xml
+
+aop:
+  flow-trace-enabled: false      # 调用方法跟踪
+  performance-enabled: false     # 方法性能监控
