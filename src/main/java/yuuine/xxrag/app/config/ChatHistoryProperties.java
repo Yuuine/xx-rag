@@ -4,32 +4,37 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * 个人使用场景下的全局单人对话配置：进程内仅维护一条对话上下文，持久化到本地文件。
+ * 非多租户/多会话隔离模型；若部署在公网或多人共用，请另行加强鉴权与隔离。
+ */
 @Configuration
 @ConfigurationProperties(prefix = "app.chat.history")
 @Data
 public class ChatHistoryProperties {
 
     /**
-     * 缓存刷新阈值 - 当缓存中的消息数量达到此值时，自动刷新到数据库
+     * 内存中消息条数达到该值时，整批写入历史文件并清空内存缓冲（与 {@link yuuine.xxrag.app.application.service.ChatSessionService} 一致）。
      */
-    private int flushThreshold = 10;
+    private int flushThreshold = 20;
 
     /**
-     * 会话过期时间（分钟）- 会话在指定时间内无活动将被清理
+     * 预留：个人版当前未使用（全局会话无按时间过期清理）。
      */
     private int sessionExpiryMinutes = 30;
 
     /**
-     * 是否启用数据库持久化
+     * 是否将历史写入本地文件；关闭后仅进程内保留，重启后不恢复。
      */
     private boolean persistenceEnabled = true;
-    /**
-     * 最大历史消息数量 - 单次请求返回的最大历史消息数（用于发送给模型，防止 token 爆炸）
-     */
-    private int maxHistoryMessages = 10;
 
     /**
-     * 历史回显数量 - 首次连接时向前端回显的历史消息条数（UI 展示）
+     * 组装推理请求时，从全局历史中最多取最近多少条消息（防止上下文过长）。
+     */
+    private int maxHistoryMessages = 20;
+
+    /**
+     * 预留：前端历史回显条数（个人版 UI 可按需使用）。
      */
     private int maxHistoryEchoMessages = 20;
 

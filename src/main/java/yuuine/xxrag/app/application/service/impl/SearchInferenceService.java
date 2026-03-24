@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import yuuine.xxrag.app.application.service.ChatSessionService;
 import yuuine.xxrag.app.application.service.RagVectorService;
+import yuuine.xxrag.app.config.ChatHistoryProperties;
 import yuuine.xxrag.dto.common.ApiChatChunk;
 import yuuine.xxrag.dto.common.VectorSearchResult;
 import yuuine.xxrag.dto.request.InferenceRequest;
@@ -18,6 +19,9 @@ import yuuine.xxrag.websocket.RagWebSocketSessionManager;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 个人版 RAG 流式推理：依赖全局 {@link ChatSessionService} 历史，按配置截取最近若干条再送模型。
+ */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -27,6 +31,7 @@ public class SearchInferenceService {
     private final InferenceService inferenceService;
     private final PromptConstructionService promptConstructionService;
     private final ChatSessionService chatSessionService;
+    private final ChatHistoryProperties chatHistoryProperties;
     private final RagWebSocketSessionManager wsSessionManager;
 
     public void streamSearch(String query, Session session) {
@@ -35,7 +40,7 @@ public class SearchInferenceService {
 
     private void executeRagSearchStream(String query, Session session) {
         try {
-            log.info("开始流式搜索，查询: {}", query);
+            log.debug("开始流式搜索，查询长度: {}", query != null ? query.length() : 0);
 
             boolean isChitChat = isChitChatQuery(query);
             List<VectorSearchResult> contexts = isChitChat ? null : searchContexts(query);
@@ -121,7 +126,8 @@ public class SearchInferenceService {
     }
 
     private InferenceRequest buildInferenceRequestWithHistory(String query, List<VectorSearchResult> contexts) {
-        List<InferenceRequest.Message> historyMessages = chatSessionService.getMessages();
+        List<InferenceRequest.Message> rawHistory = chatSessionService.getMessages();
+        List<InferenceRequest.Message> historyMessages = tailMessages(rawHistory, chatHistoryProperties.getMaxHistoryMessages());
 
         InferenceRequest currentRequest = promptConstructionService.buildInferenceRequest(query, contexts);
 
@@ -131,9 +137,23 @@ public class SearchInferenceService {
         InferenceRequest requestWithHistory = new InferenceRequest();
         requestWithHistory.setMessages(allMessages);
 
-        log.debug("构建包含历史的请求，历史消息数: {}, 总消息数: {}", historyMessages.size(), allMessages.size());
+        log.debug("构建包含历史的请求，原始历史: {}, 截断后: {}, 总消息数: {}",
+                rawHistory.size(), historyMessages.size(), allMessages.size());
 
         return requestWithHistory;
+    }
+
+    /**
+     * 仅取全局历史中最近 max 条，避免个人长会话时 token 过大；max &lt;= 0 表示不截断。
+     */
+    private static List<InferenceRequest.Message> tailMessages(List<InferenceRequest.Message> messages, int max) {
+        if (messages == null || messages.isEmpty()) {
+            return new ArrayList<>();
+        }
+        if (max <= 0 || messages.size() <= max) {
+            return new ArrayList<>(messages);
+        }
+        return new ArrayList<>(messages.subList(messages.size() - max, messages.size()));
     }
 
     private String determineQueryType(String query) {

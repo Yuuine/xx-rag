@@ -1,10 +1,6 @@
 package yuuine.xxrag.websocket;
 
-import jakarta.websocket.OnClose;
-import jakarta.websocket.OnError;
-import jakarta.websocket.OnMessage;
-import jakarta.websocket.OnOpen;
-import jakarta.websocket.Session;
+import jakarta.websocket.*;
 import jakarta.websocket.server.ServerEndpoint;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +12,9 @@ import yuuine.xxrag.app.application.service.ChatSessionService;
 import yuuine.xxrag.app.application.service.impl.SearchInferenceService;
 import yuuine.xxrag.dto.response.StreamResponse;
 
+/**
+ * 个人使用场景 WebSocket：所有连接共享全局对话与检索流程；同一用户多标签页会收到独立连接但共用一份会话历史。
+ */
 @Component
 @ServerEndpoint("/ws-chat")
 @Slf4j
@@ -53,7 +52,7 @@ public class RagWebSocketHandler implements ApplicationContextAware {
 
     @OnMessage
     public void onMessage(String message, Session session) {
-        log.info("收到客户端消息: {}", message);
+        log.debug("收到客户端消息，长度: {}", message != null ? message.length() : 0);
 
         try {
             chatSessionService.addUserMessage(message);
@@ -75,10 +74,6 @@ public class RagWebSocketHandler implements ApplicationContextAware {
 
     public static void sendToSession(Session session, Object message) {
         wsSessionManager.sendToSession(session, message);
-    }
-
-    public static void sendMessageToSession(String sessionId, Object message) {
-        wsSessionManager.sendMessageToSession(sessionId, message);
     }
 
     public static void broadcast(Object message) {

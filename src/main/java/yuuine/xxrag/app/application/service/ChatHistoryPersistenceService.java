@@ -1,20 +1,25 @@
 package yuuine.xxrag.app.application.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import yuuine.xxrag.app.config.ChatHistoryProperties;
 import yuuine.xxrag.dto.request.InferenceRequest;
 
-import jakarta.annotation.PostConstruct;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 个人版全局对话的本地文件持久化（JSON）。关闭 {@link ChatHistoryProperties#persistenceEnabled} 时不读写文件。
+ */
 @Service
 @Slf4j
 public class ChatHistoryPersistenceService {
@@ -44,6 +49,10 @@ public class ChatHistoryPersistenceService {
 
     @SuppressWarnings("unchecked")
     public List<InferenceRequest.Message> loadHistory() {
+        if (!properties.isPersistenceEnabled()) {
+            log.debug("历史持久化已关闭，不加载文件");
+            return new ArrayList<>();
+        }
         if (!Files.exists(historyFilePath)) {
             log.debug("历史记录文件不存在，返回空列表: {}", historyFilePath);
             return new ArrayList<>();
@@ -73,6 +82,10 @@ public class ChatHistoryPersistenceService {
     }
 
     public void saveHistory(List<InferenceRequest.Message> messages) {
+        if (!properties.isPersistenceEnabled()) {
+            log.debug("历史持久化已关闭，跳过写入");
+            return;
+        }
         if (messages == null || messages.isEmpty()) {
             log.debug("没有消息需要持久化");
             return;

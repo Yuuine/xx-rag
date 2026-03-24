@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+/**
+ * 管理当前 JVM 内所有 WebSocket 连接；个人版下通常仅一人使用，{@link #broadcast} 用于向所有打开的标签页推送。
+ */
 @Component
 @Slf4j
 public class RagWebSocketSessionManager {
@@ -39,10 +42,6 @@ public class RagWebSocketSessionManager {
         } catch (IOException e) {
             log.error("发送消息失败", e);
         }
-    }
-
-    public void sendMessageToSession(String sessionId, Object message) {
-        log.warn("sendMessageToSession 不再支持，请使用 sendToSession 或 broadcast");
     }
 
     public void broadcast(Object message) {

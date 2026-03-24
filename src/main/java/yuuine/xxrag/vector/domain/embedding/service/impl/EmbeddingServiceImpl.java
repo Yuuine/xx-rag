@@ -5,6 +5,8 @@ import com.alibaba.dashscope.embeddings.TextEmbeddingResultItem;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import yuuine.xxrag.common.util.ValidationUtils;
+import yuuine.xxrag.common.util.VectorUtils;
 import yuuine.xxrag.dto.common.VectorAddResult;
 import yuuine.xxrag.dto.common.VectorAddResult.VectorChunk;
 import yuuine.xxrag.dto.request.VectorAddRequest;
@@ -107,25 +109,20 @@ public class EmbeddingServiceImpl implements EmbeddingService {
                     int textIndex = item.getTextIndex();
                     VectorAddRequest request = batch.get(textIndex);
 
-                    // 原始向量类型 Double -> float[]
-                    List<Double> doubleList = item.getEmbedding();
-                    float[] vector = new float[doubleList.size()];
-                    for (int k = 0; k < doubleList.size(); k++) {
-                        vector[k] = doubleList.get(k).floatValue();
-                    }
+                    float[] vector = VectorUtils.toFloatArray(item.getEmbedding());
 
-                    // 构建 ES 写模型 RagChunkDocument
-                    RagChunkDocument document = new RagChunkDocument();
-                    document.setChunkId(request.getChunkId());
-                    document.setFileMd5(request.getFileMd5());
-                    document.setSource(request.getSource());
-                    document.setChunkIndex(request.getChunkIndex()); // 按照原文索引顺序
-                    document.setContent(request.getChunkText());
-                    document.setCharCount(request.getCharCount());
-                    document.setEmbedding(vector);
-                    document.setEmbeddingDim(vector.length);
-                    document.setModel("text-embedding-v4");
-                    document.setCreatedAt(Instant.now());
+                    RagChunkDocument document = RagChunkDocument.builder()
+                            .chunkId(request.getChunkId())
+                            .fileMd5(request.getFileMd5())
+                            .source(request.getSource())
+                            .chunkIndex(request.getChunkIndex())
+                            .content(request.getChunkText())
+                            .charCount(request.getCharCount())
+                            .embedding(vector)
+                            .embeddingDim(vector.length)
+                            .model("text-embedding-v4")
+                            .createdAt(Instant.now())
+                            .build();
 
                     documents.add(document);
                 }
@@ -177,21 +174,16 @@ public class EmbeddingServiceImpl implements EmbeddingService {
 
     @Override
     public float[] embedQuery(String query) {
-        if (query == null || query.isEmpty()) {
-            throw new IllegalArgumentException("Query text cannot be null or empty");
-        }
+        ValidationUtils.requireNonEmpty(query, "Query text cannot be null or empty");
 
-        // 计算文本的哈希值作为缓存键
         int queryHash = query.hashCode();
         
-        // 检查缓存中是否已有该文本的嵌入向量
         if (embeddingCache.containsKey(queryHash)) {
             log.debug("Using cached embedding for query");
             return embeddingCache.get(queryHash);
         }
 
         try {
-            // 调用 DashScope Embedding API，单条文本也用 list 包裹
             TextEmbeddingResult result = dashScopeEmbeddingUtil.generateEmbeddingResult(List.of(query));
             List<TextEmbeddingResultItem> embeddings = result.getOutput().getEmbeddings();
 
@@ -199,14 +191,8 @@ public class EmbeddingServiceImpl implements EmbeddingService {
                 throw new RuntimeException("DashScope returned empty embedding");
             }
 
-            // 取第一个 embedding，理论上只有一条返回
-            List<Double> doubleList = embeddings.get(0).getEmbedding();
-            float[] vector = new float[doubleList.size()];
-            for (int i = 0; i < doubleList.size(); i++) {
-                vector[i] = doubleList.get(i).floatValue();
-            }
+            float[] vector = VectorUtils.toFloatArray(embeddings.get(0).getEmbedding());
 
-            // 将结果存入缓存
             embeddingCache.put(queryHash, vector);
             log.debug("Cached new embedding for query");
 

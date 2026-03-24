@@ -10,14 +10,18 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Configuration
 public class ThreadPoolConfig {
 
+    private static final int CPU_CORES = Runtime.getRuntime().availableProcessors();
+
     @Bean("ioTaskExecutor")
     public TaskExecutor ioTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(8);          // 核心线程数
-        executor.setMaxPoolSize(16);          // 最大线程数
-        executor.setQueueCapacity(100);        // 队列容量
+        executor.setCorePoolSize(CPU_CORES * 2);
+        executor.setMaxPoolSize(CPU_CORES * 4);
+        executor.setQueueCapacity(200);
         executor.setThreadNamePrefix("io-");
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy()); // 拒绝策略：降速保护
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
         executor.initialize();
         return executor;
     }
@@ -25,11 +29,13 @@ public class ThreadPoolConfig {
     @Bean("cpuTaskExecutor")
     public TaskExecutor cpuTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(9);
-        executor.setMaxPoolSize(12);
+        executor.setCorePoolSize(CPU_CORES + 1);
+        executor.setMaxPoolSize(CPU_CORES * 2);
         executor.setQueueCapacity(100);
         executor.setThreadNamePrefix("cpu-");
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setWaitForTasksToCompleteOnShutdown(true);
+        executor.setAwaitTerminationSeconds(60);
         executor.initialize();
         return executor;
     }

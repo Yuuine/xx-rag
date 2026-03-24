@@ -1,22 +1,24 @@
 package yuuine.xxrag.app.application.service;
 
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import yuuine.xxrag.app.config.ChatHistoryProperties;
 import yuuine.xxrag.dto.request.InferenceRequest;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * 个人使用、全局单人对话：全进程共享一份消息列表，所有 WebSocket 连接读写同一上下文。
+ * 多标签页会共享历史；不提供按连接隔离。持久化由 {@link ChatHistoryPersistenceService} 完成。
+ */
 @Service
 @Slf4j
 public class ChatSessionService {
-
-    private static final int MAX_MESSAGES = 20;
 
     private final ChatHistoryPersistenceService persistenceService;
     private final ChatHistoryProperties chatHistoryProperties;
@@ -26,6 +28,11 @@ public class ChatSessionService {
         this.chatHistoryProperties = chatHistoryProperties;
         this.persistenceService = persistenceService;
         this.messages = new CopyOnWriteArrayList<>();
+    }
+
+    private int flushThreshold() {
+        int t = chatHistoryProperties.getFlushThreshold();
+        return t < 1 ? 1 : t;
     }
 
     @PostConstruct
@@ -48,7 +55,7 @@ public class ChatSessionService {
         messages.add(message);
         log.debug("添加消息到缓存，角色: {}, 当前缓存消息数: {}", role, messages.size());
 
-        if (messages.size() >= MAX_MESSAGES) {
+        if (messages.size() >= flushThreshold()) {
             persistAllAndClear();
         }
     }
@@ -66,7 +73,7 @@ public class ChatSessionService {
             return;
         }
 
-        log.info("缓存消息达到阈值 {}，开始持久化", MAX_MESSAGES);
+        log.info("缓存消息达到阈值 {}，开始持久化", flushThreshold());
         List<InferenceRequest.Message> messagesToPersist = new ArrayList<>(messages);
         persistenceService.saveHistory(messagesToPersist);
         messages.clear();

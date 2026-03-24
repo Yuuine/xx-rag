@@ -1,6 +1,7 @@
 package yuuine.xxrag.vector.domain.es.model;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
@@ -13,6 +14,7 @@ import java.time.Instant;
 
 // ES index: rag_chunks 的 mapping
 @Data
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Document(indexName = "rag_chunks")

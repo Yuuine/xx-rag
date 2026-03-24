@@ -1,6 +1,9 @@
 package yuuine.xxrag.app.domain.repository;
 
-import org.apache.ibatis.annotations.*;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import yuuine.xxrag.app.domain.model.RagDocuments;
 
 import java.time.LocalDateTime;
